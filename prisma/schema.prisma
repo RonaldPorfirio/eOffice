@@ -1,0 +1,174 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum Plano {
+  comercial
+  fiscal
+  mensalista
+}
+
+enum StatusCliente {
+  ativo
+  inativo
+  pendente
+}
+
+enum StatusReserva {
+  confirmada
+  pendente
+  cancelada
+  em_andamento
+}
+
+enum TipoCorrespondencia {
+  carta
+  sedex
+  ar
+  telegrama
+  documento
+}
+
+enum StatusCorrespondencia {
+  aguardando
+  retirada
+  devolvida
+}
+
+enum TipoAudiencia {
+  inicial
+  instrucao
+  sentenca
+  recurso
+}
+
+enum StatusAudiencia {
+  agendada
+  realizada
+  adiada
+  cancelada
+}
+
+enum Urgencia {
+  baixa
+  media
+  alta
+}
+
+enum TipoAviso {
+  info
+  warning
+  error
+  success
+}
+
+model Cliente {
+  id         String        @id
+  nome       String
+  email      String        @unique
+  telefone   String
+  plano      Plano
+  status     StatusCliente
+  dataInicio DateTime
+  endereco   String?
+  documento  String?
+
+  reservas         Reserva[]
+  correspondencias Correspondencia[]
+  audiencias       Audiencia[]
+  avisos           Aviso[]
+  usuarios         Usuario[]
+}
+
+model Sala {
+  id         String  @id
+  nome       String
+  capacidade Int
+  recursos   Json
+  valorHora  Float
+  disponivel Boolean
+  descricao  String
+  imagem     String?
+  area       Int
+
+  reservas Reserva[]
+}
+
+model Reserva {
+  id          String        @id
+  clienteId   String
+  salaId      String
+  data        DateTime
+  horaInicio  String
+  horaFim     String
+  status      StatusReserva
+  observacoes String?
+  valorTotal  Float
+  dataReserva DateTime
+
+  cliente Cliente @relation(fields: [clienteId], references: [id])
+  sala    Sala    @relation(fields: [salaId], references: [id])
+}
+
+model Correspondencia {
+  id              String                @id
+  clienteId       String
+  remetente       String
+  tipo            TipoCorrespondencia
+  dataRecebimento DateTime
+  status          StatusCorrespondencia
+  urgente         Boolean
+  observacoes     String?
+
+  cliente Cliente @relation(fields: [clienteId], references: [id])
+}
+
+model Audiencia {
+  id          String          @id
+  clienteId   String
+  processo    String
+  tribunal    String
+  data        DateTime
+  horario     String
+  tipo        TipoAudiencia
+  status      StatusAudiencia
+  urgencia    Urgencia
+  observacoes String?
+
+  cliente Cliente @relation(fields: [clienteId], references: [id])
+}
+
+model Aviso {
+  id        String    @id
+  clienteId String
+  titulo    String
+  mensagem  String
+  tipo      TipoAviso
+  urgencia  Urgencia
+  dataEnvio DateTime
+  lido      Boolean
+  resolvido Boolean
+
+  cliente Cliente @relation(fields: [clienteId], references: [id])
+}
+
+enum UserRole {
+  admin
+  cliente
+}
+
+model Usuario {
+  id        String   @id @default(cuid())
+  nome      String
+  email     String   @unique
+  senha     String
+  role      UserRole
+  clienteId String?
+  cliente   Cliente? @relation(fields: [clienteId], references: [id])
+}
