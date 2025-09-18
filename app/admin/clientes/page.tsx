@@ -584,8 +584,7 @@ export default function ClientesPage() {
           </div>
         </DialogContent>
       </Dialog>
-    </div>
-    <AlertDialog open={confirmDeleteOpen} onOpenChange={setConfirmDeleteOpen}>
+      <AlertDialog open={confirmDeleteOpen} onOpenChange={setConfirmDeleteOpen}>
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>Excluir cliente</AlertDialogTitle>
@@ -605,6 +604,7 @@ export default function ClientesPage() {
           }}>Excluir</AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
-    </AlertDialog>
+      </AlertDialog>
+    </div>
   )
 }
