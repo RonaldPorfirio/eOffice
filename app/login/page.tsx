@@ -13,31 +13,7 @@ import { Building2, Mail, Lock, AlertCircle, Eye, EyeOff, Phone, MapPin } from "
 import Image from "next/image"
 
 // Dados de demonstração (apenas para preencher rapidamente o formulário)
-const contasDemo = {
-  admin: {
-    email: "admin@eoffice1321.com.br",
-    senha: "admin123",
-    nome: "Administrador",
-    tipo: "admin",
-    descricao: "Acesso completo ao sistema",
-  },
-  mensalista: {
-    email: "carlos.silva@advocaciasilva.com.br",
-    senha: "mensalista123",
-    nome: "Dr. Carlos Eduardo Silva",
-    tipo: "mensalista",
-    plano: "mensalista",
-    descricao: "Advogado com acesso completo",
-  },
-  cliente: {
-    email: "cliente@exemplo.com.br",
-    senha: "cliente123",
-    nome: "Cliente Exemplo",
-    tipo: "cliente",
-    plano: "fiscal",
-    descricao: "Cliente com plano fiscal/comercial",
-  },
-}
+// Demo accounts removidas
 
 async function apiLogin(email: string, senha: string) {
   const res = await fetch("/api/auth/login", {
@@ -74,12 +50,8 @@ export default function LoginPage() {
       setLoading(false)
     }
   }
-
-  const handleDemoLogin = (tipo: keyof typeof contasDemo) => {
-    const conta = contasDemo[tipo]
-    setEmail(conta.email)
-    setSenha(conta.senha)
-  }
+  // Mantido stub para compatibilidade com JSX legado (conteúdo demo oculto)
+  const handleDemoLogin = (..._args: any[]) => {}
 
   return (
     <div className="min-h-screen bg-white">
@@ -108,12 +80,9 @@ export default function LoginPage() {
             </CardHeader>
             <CardContent>
               <Tabs defaultValue="login" className="w-full">
-                <TabsList className="grid w-full grid-cols-2 bg-gray-100">
+                <TabsList className="grid w-full grid-cols-1 bg-gray-100">
                   <TabsTrigger value="login" className="data-[state=active]:bg-orange-500 data-[state=active]:text-white">
                     Login
-                  </TabsTrigger>
-                  <TabsTrigger value="demo" className="data-[state=active]:bg-orange-500 data-[state=active]:text-white">
-                    Contas Demo
                   </TabsTrigger>
                 </TabsList>
 
