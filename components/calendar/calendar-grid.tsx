@@ -2,7 +2,7 @@
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { ChevronLeft, ChevronRight, Calendar } from "lucide-react"
+import { ChevronLeft, ChevronRight, Calendar, Gavel } from "lucide-react"
 import {
   format,
   startOfMonth,
@@ -71,6 +71,8 @@ export function CalendarGrid({
     const dateStr = format(date, "yyyy-MM-dd")
     return reservas.filter((reserva) => reserva.data === dateStr)
   }
+
+  const isAudiencia = (r: Reserva) => (r.observacoes || "").toUpperCase().includes("[AUDIENCIA]")
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -174,13 +176,14 @@ export function CalendarGrid({
                     {reservasDate.slice(0, 3).map((reserva) => (
                       <div
                         key={reserva.id}
-                        className="text-xs p-1 rounded cursor-pointer hover:opacity-80"
-                        style={{ backgroundColor: isAdmin ? "#f97316" : "#22c55e", color: "white" }}
+                        className={`text-xs p-1 rounded cursor-pointer hover:opacity-80 flex items-center gap-1 ${isAudiencia(reserva)?'bg-purple-600':'bg-green-500'}`}
+                        style={{ color: 'white' }}
                         onClick={(e) => {
                           e.stopPropagation()
                           onEventClick(reserva)
                         }}
                       >
+                        {isAudiencia(reserva) && <Gavel className="h-3 w-3" />}
                         <div className="font-medium truncate">{getSalaName(reserva.salaId)}</div>
                         <div className="truncate">
                           {reserva.horaInicio} - {reserva.horaFim}
@@ -227,14 +230,14 @@ export function CalendarGrid({
                     {reservasDate.map((reserva) => (
                       <div
                         key={reserva.id}
-                        className="p-3 rounded-lg border border-gray-200 cursor-pointer hover:bg-gray-50"
+                        className={`p-3 rounded-lg border cursor-pointer hover:bg-gray-50 ${isAudiencia(reserva)?'border-purple-300 bg-purple-50':''}`}
                         onClick={(e) => {
                           e.stopPropagation()
                           onEventClick(reserva)
                         }}
                       >
                         <div className="flex items-center justify-between mb-2">
-                          <span className="font-medium text-sm text-black">{getSalaName(reserva.salaId)}</span>
+                          <span className="font-medium text-sm text-black flex items-center gap-1">{isAudiencia(reserva) && <Gavel className="h-4 w-4 text-purple-600" />} {getSalaName(reserva.salaId)}</span>
                           <Badge size="sm" className={getStatusColor(reserva.status)}>
                             {reserva.status}
                           </Badge>
@@ -272,11 +275,11 @@ export function CalendarGrid({
                 getReservasForDate(currentDate).map((reserva) => (
                   <div
                     key={reserva.id}
-                    className="p-4 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50"
+                    className={`p-4 rounded-lg cursor-pointer hover:bg-gray-50 border ${isAudiencia(reserva)?'border-purple-300 bg-purple-50':'border-gray-200'}`}
                     onClick={() => onEventClick(reserva)}
                   >
                     <div className="flex items-center justify-between mb-2">
-                      <h4 className="font-medium text-black">{getSalaName(reserva.salaId)}</h4>
+                      <h4 className="font-medium text-black flex items-center gap-1">{isAudiencia(reserva) && <Gavel className="h-4 w-4 text-purple-600" />}{getSalaName(reserva.salaId)}</h4>
                       <Badge className={getStatusColor(reserva.status)}>{reserva.status}</Badge>
                     </div>
                     <div className="text-sm text-gray-600 mb-2">

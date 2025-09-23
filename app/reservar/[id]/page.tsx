@@ -17,6 +17,18 @@ import { format, addDays } from "date-fns"
 import type { Sala } from "@/lib/data"
 import Image from "next/image"
 
+// Mapeia imagens locais para cada sala
+const getSalaImage = (sala: Sala) => {
+  const map: Record<string, string> = {
+    // Mapeamento organizado por sala (A, B, C, D)
+    "sala-1": "/salas/sala-a.jpeg",
+    "sala-2": "/salas/sala-b.jpeg",
+    "sala-3": "/salas/sala-c.jpeg",
+    "sala-4": "/salas/sala-d.jpeg",
+  }
+  return map[sala.id] || sala.imagem || "/placeholder.svg?height=200&width=400&query=meeting+room"
+}
+
 const horarios = [
   "08:00",
   "08:30",
@@ -362,7 +374,7 @@ export default function ReservarSalaPage() {
                 {/* Imagem da sala */}
                 <div className="aspect-video bg-gray-100 rounded-lg overflow-hidden">
                   <Image
-                    src={sala.imagem || "/placeholder.svg?height=200&width=400&query=meeting+room"}
+                    src={getSalaImage(sala)}
                     alt={sala.nome}
                     width={400}
                     height={200}

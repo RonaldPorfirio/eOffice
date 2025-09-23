@@ -26,6 +26,7 @@ export interface BookingData {
   observacoes?: string
   clienteId?: string
   valorTotal?: number
+  audiencia?: boolean
 }
 
 interface BookingModalProps {
@@ -54,6 +55,7 @@ export function BookingModal({
   const [horaInicio, setHoraInicio] = useState<string>("")
   const [horaFim, setHoraFim] = useState<string>("")
   const [observacoes, setObservacoes] = useState<string>("")
+  const [audiencia, setAudiencia] = useState<boolean>(false)
   const [error, setError] = useState<string>("")
   const [loading, setLoading] = useState<boolean>(false)
 
@@ -109,6 +111,7 @@ export function BookingModal({
         horaFim,
         observacoes: observacoes || undefined,
         clienteId: isAdmin ? selectedCliente : undefined,
+        audiencia,
       }
 
       onConfirm(bookingData)
@@ -121,6 +124,24 @@ export function BookingModal({
   }
 
   const selectedSalaData = salas.find((s) => s.id === selectedSala)
+
+  const getSalaImage = (s: Sala | undefined) => {
+    if (!s) return "/placeholder.svg"
+    const map: Record<string, string> = {
+      // Mapeamento organizado por sala (A, B, C, D)
+      "sala-1": "/salas/sala-a.jpeg",
+      "sala-2": "/salas/sala-b.jpeg",
+      "sala-3": "/salas/sala-c.jpeg",
+      "sala-4": "/salas/sala-d.jpeg",
+    }
+    return map[s.id] || s.imagem || "/placeholder.svg"
+  }
+
+  const getSalaLetter = (id?: string) => {
+    if (!id) return ""
+    const map: Record<string, string> = { 'sala-1':'A', 'sala-2':'B', 'sala-3':'C', 'sala-4':'D' }
+    return map[id] || ""
+  }
   const valorEstimado = (() => {
     if (!selectedSalaData || !horaInicio || !horaFim) return 0
     const inicio = new Date(`2024-01-01T${horaInicio}`)
@@ -188,13 +209,16 @@ export function BookingModal({
                     <SelectValue placeholder="Selecione uma sala" />
                   </SelectTrigger>
                   <SelectContent className="bg-white border-gray-200">
-                    {salas
-                      .filter((s) => s.disponivel)
-                      .map((sala) => (
+                    {salas.map((sala) => {
+                      const map: Record<string,string> = { 'sala-1':'A', 'sala-2':'B', 'sala-3':'C', 'sala-4':'D' }
+                      const letter = map[sala.id] || ''
+                      const label = letter ? `Sala ${letter}` : sala.nome || 'Sala'
+                      return (
                         <SelectItem key={sala.id} value={sala.id}>
-                          {sala.nome} - {sala.capacidade} pessoas
+                          {label}
                         </SelectItem>
-                      ))}
+                      )
+                    })}
                   </SelectContent>
                 </Select>
               </div>
@@ -242,6 +266,11 @@ export function BookingModal({
                 />
               </div>
 
+              <div className="flex items-center gap-2">
+                <input id="audiencia" type="checkbox" checked={audiencia} onChange={(e)=>setAudiencia(e.target.checked)} />
+                <Label htmlFor="audiencia" className="text-black">Audiência</Label>
+              </div>
+
               {error && (
                 <Alert className="border-red-200 bg-red-50">
                   <AlertCircle className="h-4 w-4" />
@@ -284,7 +313,7 @@ export function BookingModal({
                 <CardContent className="space-y-4">
                   <div className="aspect-video bg-gray-100 rounded-lg flex items-center justify-center border border-gray-200">
                     <img
-                      src={selectedSalaData.imagem || "/placeholder.svg"}
+                      src={getSalaImage(selectedSalaData)}
                       alt={selectedSalaData.nome}
                       className="w-full h-full object-cover rounded-lg"
                     />
@@ -310,6 +339,23 @@ export function BookingModal({
                           {resource}
                         </Badge>
                       ))}
+                    </div>
+                  </div>
+
+                  <div className="bg-gray-50 border border-gray-200 p-4 rounded-lg">
+                    <h4 className="font-medium text-black mb-2">Descrição da Sala</h4>
+                    <p className="text-sm text-gray-700 mb-2">Sala {getSalaLetter(selectedSalaData.id)} — infraestrutura padronizada:</p>
+                    <ul className="text-sm text-gray-700 list-disc list-inside space-y-1">
+                      <li><span className="font-medium">Ar Condicionado</span> — Climatização controlada</li>
+                      <li><span className="font-medium">Móveis Planejados</span> — Mesa de reunião e cadeiras executivas</li>
+                      <li><span className="font-medium">Decoração Moderna</span> — Ambiente profissional e acolhedor</li>
+                      <li><span className="font-medium">Wi‑Fi de Alta Velocidade</span> — Internet rápida e estável</li>
+                      <li><span className="font-medium">Para apresentações e videoconferências</span></li>
+                      <li><span className="font-medium">Iluminação Natural</span> — Amplas janelas com vista panorâmica</li>
+                    </ul>
+                    <div className="grid grid-cols-2 gap-4 mt-3">
+                      <div className="text-sm text-gray-700">Recomendado: 4 pessoas</div>
+                      <div className="text-sm text-gray-700">Máximo: 6 pessoas</div>
                     </div>
                   </div>
 

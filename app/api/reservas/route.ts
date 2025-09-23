@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server"
+﻿import { NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
 
 export async function POST(req: Request) {
@@ -10,7 +10,6 @@ export async function POST(req: Request) {
     if (!id || !clienteId || !salaId || !data || !horaInicio || !horaFim) {
       return NextResponse.json({ error: "Campos obrigatórios ausentes" }, { status: 400 })
     }
-
     // conflito simples por sobreposição
     const existentes = await prisma.reserva.findMany({
       where: { salaId, data: new Date(data), status: { not: "cancelada" } },

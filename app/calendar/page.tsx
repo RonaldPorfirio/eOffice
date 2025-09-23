@@ -108,6 +108,12 @@ export default function CalendarPage() {
       setReservas((prev) => [...prev, criadaNorm])
       setMessage("Reserva criada com sucesso! Aguardando confirmação.")
       setTimeout(() => setMessage("") , 5000)
+      try {
+        const titulo = 'Agendamento criado'
+        const salaNome = salas.find(s=>s.id===bookingData.salaId)?.nome || bookingData.salaId
+        const mensagem = `Reserva em ${criadaNorm.data} ${bookingData.horaInicio}-${bookingData.horaFim} | Sala ${salaNome}`
+        await fetch(`/api/clientes/${user.id}/avisos`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ titulo, mensagem, tipo:'info', urgencia:'baixa' }) })
+      } catch {}
     } else if (resp.status === 409) {
       setMessage("Conflito de horário. Escolha outro horário.")
       setTimeout(() => setMessage("") , 5000)
@@ -454,4 +460,3 @@ export default function CalendarPage() {
     </div>
   )
 }
-

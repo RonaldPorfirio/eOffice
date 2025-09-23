@@ -7,6 +7,7 @@ export async function PATCH(req: Request, { params }: Params) {
   try {
     const { id } = await params
     const { status, observacoes } = await req.json()
+    // Sem checagem de autoria no back-end neste momento
     const toDbStatus = (s?: string) => {
       if (!s) return undefined
       const normalized = s.replace("-", "_")

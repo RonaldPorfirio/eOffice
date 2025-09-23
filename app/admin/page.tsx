@@ -13,8 +13,10 @@ import { CalendarGrid } from "@/components/calendar/calendar-grid"
 import { BookingModal, type BookingData } from "@/components/calendar/booking-modal"
 import { RoomView } from "@/components/room-view"
 import { NovoClienteModal } from "@/components/admin/novo-cliente-modal"
+import { TrocarSenhaModal } from "@/components/admin/trocar-senha-modal"
 import { EditCorrespondenciaModal } from "@/components/correspondencias/edit-correspondencia-modal"
 import type { Reserva, Sala } from "@/lib/data"
+import { salas as mockSalas } from "@/lib/data"
 import { format } from "date-fns"
 
 type AdminView = 'month' | 'week' | 'day' | 'clients' | 'corresp' | 'room'
@@ -42,12 +44,16 @@ export default function AdminPage(): JSX.Element {
   const [view, setView] = useState('month' as AdminView)
   const [selectedDate, setSelectedDate] = useState(null as Date | null)
   const [showBookingModal, setShowBookingModal] = useState(false)
+  const [selectedReserva, setSelectedReserva] = useState<any>(null)
+  const [showEventModal, setShowEventModal] = useState(false)
 
   // inline edit
   const [editingId, setEditingId] = useState(null as string | null)
   const [editForm, setEditForm] = useState({ nome: "", email: "", telefone: "", plano: "mensalista", status: "ativo" } as any)
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [toDeleteId, setToDeleteId] = useState<string | null>(null)
+  const [senhaOpen, setSenhaOpen] = useState(false)
+  const [senhaCliente, setSenhaCliente] = useState<any>(null)
 
   useEffect(() => {
     const userData = localStorage.getItem("user")
@@ -64,7 +70,7 @@ export default function AdminPage(): JSX.Element {
       fetch("/api/audiencias").then((r) => r.json()).catch(() => []),
     ])
       .then(([salasData, reservasData, clientesData, corrData, audData]) => {
-        setSalas(salasData)
+        setSalas((salasData && salasData.length>0) ? salasData : mockSalas)
         const normalized = (reservasData || []).map((r: any) => ({ ...r, data: format(new Date(r.data), "yyyy-MM-dd") }))
         setReservas(normalized)
         setClientes(clientesData)
@@ -83,6 +89,7 @@ export default function AdminPage(): JSX.Element {
     const fim = new Date(`2024-01-01T${data.horaFim}`)
     const horas = (fim.getTime() - inicio.getTime()) / (1000 * 60 * 60)
     let valorTotal = (sala?.valorHora || 0) * horas
+    const observacoes = data.audiencia ? `[AUDIENCIA] ${data.observacoes || ''}`.trim() : data.observacoes
     const resp = await fetch("/api/reservas", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -93,7 +100,7 @@ export default function AdminPage(): JSX.Element {
         data: data.data,
         horaInicio: data.horaInicio,
         horaFim: data.horaFim,
-        observacoes: data.observacoes,
+        observacoes,
         valorTotal,
         status: "confirmada",
       }),
@@ -103,6 +110,27 @@ export default function AdminPage(): JSX.Element {
       const novaNorm = { ...nova, data: format(new Date(nova.data), "yyyy-MM-dd") }
       setReservas((prev) => [...prev, novaNorm])
       setMessage("Reserva criada e confirmada com sucesso!")
+
+      try {
+        // Aviso padrão de agendamento
+        const cliId = data.clienteId || clientes[0]?.id
+        const cli = clientes.find((c:any)=>c.id === cliId)
+        if (cli) {
+          const titulo = 'Agendamento criado'
+          const salaNome = salas.find(s=>s.id===data.salaId)?.nome || data.salaId
+          const mensagem = `Reserva em ${novaNorm.data} ${data.horaInicio}-${data.horaFim} | Sala ${salaNome}`
+          await fetch(`/api/clientes/${cli.id}/avisos`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ titulo, mensagem, tipo:'info', urgencia:'baixa' }) })
+        }
+        if (data.audiencia) {
+          const cli = clientes.find((c:any)=>c.id === (data.clienteId || clientes[0]?.id))
+          if (cli && cli.plano === 'mensalista') {
+            const titulo = 'Audiência agendada'
+            const salaNome = salas.find(s=>s.id===data.salaId)?.nome || data.salaId
+            const mensagem = `Audiência em ${novaNorm.data} ${data.horaInicio}-${data.horaFim} | Sala ${salaNome} | Usuário: ${cli.nome}`
+            await fetch(`/api/clientes/${cli.id}/avisos`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ titulo, mensagem, tipo:'info', urgencia:'media' }) })
+          }
+        }
+      } catch {}
     } else if (resp.status === 409) {
       setMessage("Conflito de horario. Escolha outro horario.")
     } else {
@@ -164,16 +192,16 @@ export default function AdminPage(): JSX.Element {
           <Card>
             <CardHeader><CardTitle>Calendario</CardTitle><CardDescription>Visualize e gerencie reservas</CardDescription></CardHeader>
           <CardContent>
-              <CalendarGrid reservas={reservas} salas={salas} onDateClick={(d)=>{setSelectedDate(d);setShowBookingModal(true)}} onEventClick={() => null} view="month" currentDate={currentDate} onDateChange={setCurrentDate} />
+          <CalendarGrid reservas={reservas} salas={salas} onDateClick={(d)=>{setSelectedDate(d);setShowBookingModal(true)}} onEventClick={(r)=>{ setSelectedReserva(r); setShowEventModal(true) }} view="month" currentDate={currentDate} onDateChange={setCurrentDate} />
           </CardContent></Card>
         </TabsContent>
 
         <TabsContent value="week">
-          <CalendarGrid reservas={reservas} salas={salas} onDateClick={(d)=>{setSelectedDate(d);setShowBookingModal(true)}} onEventClick={() => null} view="week" currentDate={currentDate} onDateChange={setCurrentDate} />
+          <CalendarGrid reservas={reservas} salas={salas} onDateClick={(d)=>{setSelectedDate(d);setShowBookingModal(true)}} onEventClick={(r)=>{ setSelectedReserva(r); setShowEventModal(true) }} view="week" currentDate={currentDate} onDateChange={setCurrentDate} />
         </TabsContent>
 
         <TabsContent value="day">
-          <CalendarGrid reservas={reservas} salas={salas} onDateClick={(d)=>{setSelectedDate(d);setShowBookingModal(true)}} onEventClick={() => null} view="day" currentDate={currentDate} onDateChange={setCurrentDate} />
+          <CalendarGrid reservas={reservas} salas={salas} onDateClick={(d)=>{setSelectedDate(d);setShowBookingModal(true)}} onEventClick={(r)=>{ setSelectedReserva(r); setShowEventModal(true) }} view="day" currentDate={currentDate} onDateChange={setCurrentDate} />
         </TabsContent>
 
         <TabsContent value="clients">
@@ -212,10 +240,14 @@ export default function AdminPage(): JSX.Element {
                         <div>
                           <div className="font-medium">{c.nome}</div>
                           <div className="text-sm text-gray-600">{c.email}</div>
+                          {c.dataInicio && (
+                            <div className="text-xs text-gray-500">Desde {format(new Date(c.dataInicio), "dd/MM/yyyy")}</div>
+                          )}
                         </div>
                         <div className="flex items-center gap-2">
                           <Badge variant="outline">{c.plano}</Badge>
                           <Badge className={c.status==='ativo'?'bg-green-100 text-green-700':'bg-gray-200 text-gray-700'}>{c.status}</Badge>
+                          <Button size="sm" variant="outline" onClick={()=>{ setSenhaCliente(c); setSenhaOpen(true) }}>Senha</Button>
                           <Button size="sm" variant="outline" onClick={()=>{ setEditingId(c.id); setEditForm({ nome:c.nome, email:c.email, telefone:c.telefone||'', plano:c.plano, status:c.status }) }}>Editar</Button>
                           {c.status !== 'inativo' ? (
                             <Button size="sm" variant="outline" onClick={async()=>{
@@ -389,6 +421,35 @@ export default function AdminPage(): JSX.Element {
         open={showNovoCliente}
         onClose={()=> setShowNovoCliente(false)}
         onCreated={(novo)=> { setClientes((prev)=>[novo, ...prev]); setMessage('Cliente criado'); setTimeout(()=>setMessage(''),3000) }}
+      />
+
+      {/* Modal de Detalhes da Reserva */}
+      <AlertDialog open={showEventModal} onOpenChange={setShowEventModal}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Detalhes da Reserva</AlertDialogTitle>
+            <AlertDialogDescription>Informações da reserva selecionada.</AlertDialogDescription>
+          </AlertDialogHeader>
+          {selectedReserva && (
+            <div className="space-y-2 text-sm">
+              <div><span className="font-medium">Cliente:</span> {clientes.find((c:any)=>c.id===selectedReserva.clienteId)?.nome || selectedReserva.clienteId}</div>
+              <div><span className="font-medium">Sala:</span> {salas.find((s)=>s.id===selectedReserva.salaId)?.nome || selectedReserva.salaId}</div>
+              <div><span className="font-medium">Dia:</span> {selectedReserva.data}</div>
+              <div><span className="font-medium">Horário:</span> {selectedReserva.horaInicio} - {selectedReserva.horaFim}</div>
+              {selectedReserva.observacoes && (<div><span className="font-medium">Observações:</span> {selectedReserva.observacoes}</div>)}
+            </div>
+          )}
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={()=>setShowEventModal(false)}>Fechar</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <TrocarSenhaModal
+        open={senhaOpen}
+        onClose={()=> setSenhaOpen(false)}
+        cliente={senhaCliente}
+        onChanged={()=>{ setMessage('Senha atualizada'); setTimeout(()=>setMessage(''),3000) }}
       />
 
       {/* Confirmar exclusão de correspondência */}

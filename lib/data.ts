@@ -129,7 +129,7 @@ export const salas: Sala[] = [
     valorHora: 80,
     disponivel: true,
     descricao: "Sala executiva ideal para reuniões corporativas e apresentações.",
-    imagem: "/placeholder.svg?height=200&width=300&text=Sala+Executiva+A",
+    imagem: "/salas/escritorio1.jpg",
     area: 25,
   },
   {

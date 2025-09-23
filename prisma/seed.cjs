@@ -100,6 +100,17 @@ async function main() {
         imagem: '/placeholder.svg?height=200&width=300&text=Sala+Privativa+B',
         area: 20,
       },
+      {
+        id: 'sala-4',
+        nome: 'Sala Reunião D',
+        capacidade: 10,
+        recursos: ['Wi-Fi', 'Ar condicionado', 'TV 55" HDMI', 'Mesa retangular', 'Cadeiras executivas'],
+        valorHora: 140,
+        disponivel: true,
+        descricao: 'Sala ampla para reuniões maiores e apresentações.',
+        imagem: '/placeholder.svg?height=200&width=300&text=Sala+D',
+        area: 35,
+      },
     ]
 
     for (const s of salas) {
@@ -207,4 +218,3 @@ main()
     await prisma.$disconnect()
     process.exit(1)
   })
-

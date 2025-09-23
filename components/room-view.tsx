@@ -54,6 +54,14 @@ export function RoomView({ className }: RoomViewProps) {
     ],
   }
 
+  // Galeria real da sala (imagens locais)
+  const gallery = [
+    "/salas/sala-a.jpeg",
+    "/salas/sala-b.jpeg",
+    "/salas/sala-c.jpeg",
+    "/salas/sala-d.jpeg",
+  ]
+
   return (
     <div className={className}>
       <div className="space-y-6">
@@ -71,7 +79,7 @@ export function RoomView({ className }: RoomViewProps) {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {roomData.images.map((image, index) => (
+              {gallery.map((image, index) => (
                 <div key={index} className="relative group">
                   <img
                     src={image || "/placeholder.svg"}
