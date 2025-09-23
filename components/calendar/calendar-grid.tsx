@@ -138,7 +138,8 @@ export function CalendarGrid({
 
       {/* Grid do Calendário */}
       {view === "month" && (
-        <div className="grid grid-cols-7 gap-1">
+        <div className="overflow-x-auto">
+          <div className="grid grid-cols-7 gap-1 min-w-[700px]">
           {/* Cabeçalho dos dias da semana */}
           {["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"].map((day) => (
             <div
@@ -199,11 +200,12 @@ export function CalendarGrid({
               </Card>
             )
           })}
+          </div>
         </div>
       )}
 
       {view === "week" && (
-        <div className="space-y-2">
+        <div className="space-y-2 overflow-x-auto">
           {dates.map((date) => {
             const reservasDate = getReservasForDate(date)
             const isToday = isSameDay(date, new Date())
@@ -211,7 +213,7 @@ export function CalendarGrid({
             return (
               <Card
                 key={date.toISOString()}
-                className={`cursor-pointer transition-colors border-gray-200 hover:bg-orange-50 ${
+                className={`min-w-[320px] cursor-pointer transition-colors border-gray-200 hover:bg-orange-50 ${
                   isToday ? "ring-2 ring-orange-500" : ""
                 }`}
                 onClick={() => onDateClick(date)}

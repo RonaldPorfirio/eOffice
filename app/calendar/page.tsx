@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
@@ -157,7 +157,7 @@ export default function CalendarPage() {
             <div className="flex items-center space-x-4">
               <Building2 className="h-8 w-8 text-blue-600" />
               <div>
-                <h1 className="text-xl font-bold text-gray-900">Calendário de Reservas</h1>
+                <h1 className="text-xl font-bold text-gray-900">calendário de Reservas</h1>
                 <p className="text-sm text-gray-600">Gerencie suas reservas de salas</p>
               </div>
             </div>
@@ -235,12 +235,12 @@ export default function CalendarPage() {
           </Card>
         </div>
 
-        {/* Controles do Calendário */}
+        {/* Controles do calendário */}
         <Card className="mb-6">
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle>Calendário de Salas</CardTitle>
+                <CardTitle>calendário de Salas</CardTitle>
                 <CardDescription>Clique em qualquer data para criar uma nova reserva</CardDescription>
               </div>
 
@@ -254,16 +254,16 @@ export default function CalendarPage() {
           </CardHeader>
           <CardContent>
             <Tabs value={view} onValueChange={(v) => setView(v as "month" | "week" | "day")}>
-              <TabsList className="grid w-full grid-cols-3 max-w-md">
-                <TabsTrigger value="month" className="flex items-center">
+              <TabsList className="flex w-full overflow-x-auto gap-2">
+                <TabsTrigger value="month" className="flex items-center min-w-[120px]">
                   <Grid3X3 className="h-4 w-4 mr-2" />
                   Mês
                 </TabsTrigger>
-                <TabsTrigger value="week" className="flex items-center">
+                <TabsTrigger value="week" className="flex items-center min-w-[120px]">
                   <List className="h-4 w-4 mr-2" />
                   Semana
                 </TabsTrigger>
-                <TabsTrigger value="day" className="flex items-center">
+                <TabsTrigger value="day" className="flex items-center min-w-[120px]">
                   <Eye className="h-4 w-4 mr-2" />
                   Dia
                 </TabsTrigger>
@@ -344,7 +344,7 @@ export default function CalendarPage() {
                           <div>
                             <p className="font-medium">{sala?.nome}</p>
                             <p className="text-sm text-gray-600">
-                              {format(new Date(reserva.data), "d 'de' MMM", { locale: ptBR })} • {reserva.horaInicio} - {reserva.horaFim}
+                              {format(new Date(reserva.data), "d 'de' MMM", { locale: ptBR })} â€¢ {reserva.horaInicio} - {reserva.horaFim}
                             </p>
                           </div>
                         </div>
@@ -427,7 +427,7 @@ export default function CalendarPage() {
                   </p>
                 </div>
                 <div>
-                  <Label className="text-sm font-medium text-gray-600">Horário</Label>
+                  <Label className="text-sm font-medium text-gray-600">horário</Label>
                   <p className="font-medium">
                     {selectedReserva.horaInicio} - {selectedReserva.horaFim}
                   </p>
@@ -460,3 +460,8 @@ export default function CalendarPage() {
     </div>
   )
 }
+
+
+
+
+

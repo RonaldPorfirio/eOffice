@@ -33,7 +33,7 @@ export default function DashboardPage() {
   const [clearing, setClearing] = useState(false)
   const [confirmClearOpen, setConfirmClearOpen] = useState(false)
   useEffect(() => {
-    // Verificar se usuário está logado
+    // Verificar se usuÃ¡rio estÃ¡ logado
     const userData = localStorage.getItem("user")
     if (!userData) {
       router.push("/login")
@@ -67,7 +67,7 @@ export default function DashboardPage() {
       .finally(() => setLoading(false))
   }, [router])
 
-  // Atualiza avisos periodicamente para refletir novas correspondências criadas no admin
+  // Atualiza avisos periodicamente para refletir novas correspondÃªncias criadas no admin
   useEffect(() => {
     if (!user) return
     let stopped = false
@@ -110,7 +110,7 @@ export default function DashboardPage() {
   const podeReservarSalas = user.plano === 'mensalista'
   const temAcessoAudiencias = user.plano === 'mensalista'
 
-  // Estatísticas
+  // EstatÃ­sticas
   const stats = {
     reservas: reservas.length,
     correspondenciasPendentes: correspondencias.filter((c) => c.status === "aguardando").length,
@@ -159,11 +159,11 @@ export default function DashboardPage() {
       <div className="container mx-auto px-4 py-8">
         {/* Boas-vindas */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-black mb-2">Olá, {user.nome}!</h1>
+          <h1 className="text-3xl font-bold text-black mb-2">OlÃ¡, {user.nome}!</h1>
           <p className="text-gray-600">Bem-vindo ao seu painel de controle do eOffice 1321.</p>
         </div>
 
-        {/* Cards de Estatísticas */}
+        {/* Cards de EstatÃ­sticas */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           {podeReservarSalas && (
             <Card className="border-gray-200">
@@ -172,7 +172,7 @@ export default function DashboardPage() {
                   <div>
                     <p className="text-sm font-medium text-gray-600">Reservas</p>
                     <p className="text-2xl font-bold text-black">{stats.reservas}</p>
-                    <p className="text-xs text-orange-600">Este mês</p>
+                    <p className="text-xs text-orange-600">Este mÃªs</p>
                   </div>
                   <Calendar className="h-8 w-8 text-orange-500" />
                 </div>
@@ -184,7 +184,7 @@ export default function DashboardPage() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">correspondências</p>
+                  <p className="text-sm font-medium text-gray-600">CorrespondÃªncias</p>
                   <p className="text-2xl font-bold text-black">{correspondencias.length}</p>
                   <p className="text-xs text-red-600">{stats.correspondenciasPendentes} pendentes</p>
                 </div>
@@ -198,7 +198,7 @@ export default function DashboardPage() {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-600">Audiências</p>
+                    <p className="text-sm font-medium text-gray-600">AudiÃªncias</p>
                     <p className="text-2xl font-bold text-black">{audiencias.length}</p>
                     <p className="text-xs text-orange-600">{stats.audienciasPendentes} agendadas</p>
                   </div>
@@ -214,7 +214,7 @@ export default function DashboardPage() {
                 <div>
                   <p className="text-sm font-medium text-gray-600">Avisos</p>
                   <p className="text-2xl font-bold text-black">{avisos.length}</p>
-                  <p className="text-xs text-red-600">{stats.avisosNaoLidos} não lidos</p>
+                  <p className="text-xs text-red-600">{stats.avisosNaoLidos} nÃ£o lidos</p>
                 </div>
                 <Bell className="h-8 w-8 text-orange-500" />
               </div>
@@ -222,12 +222,12 @@ export default function DashboardPage() {
           </Card>
         </div>
 
-        {/* Ações Rápidas */}
+        {/* AÃ§Ãµes RÃ¡pidas */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
           <Card className="border-gray-200">
             <CardHeader>
-              <CardTitle className="text-black">Ações Rápidas</CardTitle>
-              <CardDescription className="text-gray-600">Acesso rápido às principais funcionalidades</CardDescription>
+              <CardTitle className="text-black">AÃ§Ãµes RÃ¡pidas</CardTitle>
+              <CardDescription className="text-gray-600">Acesso rÃ¡pido Ã s principais funcionalidades</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
               {podeReservarSalas && (
@@ -237,7 +237,7 @@ export default function DashboardPage() {
                 >
                   <div className="flex items-center">
                     <Calendar className="mr-2 h-4 w-4" />
-                    Calendário de Salas
+                    CalendÃ¡rio de Salas
                   </div>
                   <ArrowRight className="h-4 w-4" />
                 </Button>
@@ -246,11 +246,11 @@ export default function DashboardPage() {
               <Button
                 className="w-full justify-between bg-transparent border-orange-500 text-orange-500 hover:bg-orange-50"
                 variant="outline"
-                onClick={() => { setActiveTab('correspondencias'); const el=document.getElementById('tabs-section'); el?.scrollIntoView({ behavior:'smooth', block:'start' }) }}
+                onClick={() => router.push("/correspondencias")}
               >
                 <div className="flex items-center">
                   <Mail className="mr-2 h-4 w-4" />
-                  correspondências
+                  CorrespondÃªncias
                 </div>
                 <ArrowRight className="h-4 w-4" />
               </Button>
@@ -259,11 +259,11 @@ export default function DashboardPage() {
                 <Button
                   className="w-full justify-between bg-transparent border-orange-500 text-orange-500 hover:bg-orange-50"
                   variant="outline"
-                  onClick={() => { setActiveTab('audiencias'); const el=document.getElementById('tabs-section'); el?.scrollIntoView({ behavior:'smooth', block:'start' }) }}
+                  onClick={() => setActiveTab('audiencias')}
                 >
                   <div className="flex items-center">
                     <FileText className="mr-2 h-4 w-4" />
-                    Audiências
+                    AudiÃªncias
                   </div>
                   <ArrowRight className="h-4 w-4" />
                 </Button>
@@ -275,7 +275,7 @@ export default function DashboardPage() {
 
           <Card className="border-gray-200">
             <CardHeader>
-              <CardTitle className="text-black">Informações do Plano</CardTitle>
+              <CardTitle className="text-black">InformaÃ§Ãµes do Plano</CardTitle>
               <CardDescription className="text-gray-600">Detalhes da sua assinatura</CardDescription>
             </CardHeader>
             <CardContent>
@@ -286,7 +286,7 @@ export default function DashboardPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <h4 className="font-medium text-black">Benefícios Inclusos:</h4>
+                  <h4 className="font-medium text-black">BenefÃ­cios Inclusos:</h4>
                   <ul className="text-sm text-gray-600 space-y-1">
                     {planoInfo.beneficios.map((beneficio, index) => (
                       <li key={index} className="flex items-center">
@@ -320,7 +320,7 @@ export default function DashboardPage() {
                     </Button>
                   )}
                 </div>
-                <CardDescription className="text-gray-600">Últimas notificações importantes</CardDescription>
+                <CardDescription className="text-gray-600">Ãšltimas notificaÃ§Ãµes importantes</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
@@ -354,17 +354,17 @@ export default function DashboardPage() {
         {/* Tabs com Detalhes */}
         <Card className="border-gray-200">
           <CardHeader>
-            <CardTitle className="text-black">Atividades e Informações</CardTitle>
-            <CardDescription className="text-gray-600">{podeReservarSalas ? "Acompanhe suas atividades e conheça nossa sala" : "Acompanhe suas atividades"}</CardDescription>
+            <CardTitle className="text-black">Atividades e InformaÃ§Ãµes</CardTitle>
+            <CardDescription className="text-gray-600">{podeReservarSalas ? "Acompanhe suas atividades e conheÃ§a nossa sala" : "Acompanhe suas atividades"}</CardDescription>
           </CardHeader>
-          <CardContent id="tabs-section">
+          <CardContent>
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <TabsList className={`flex w-full overflow-x-auto gap-2 bg-gray-100`}>
                 <TabsTrigger
                   value="correspondencias"
                   className="data-[state=active]:bg-orange-500 data-[state=active]:text-white"
                 >
-                  correspondências
+                  CorrespondÃªncias
                 </TabsTrigger>
                 {podeReservarSalas && (
                   <>
@@ -388,7 +388,7 @@ export default function DashboardPage() {
                     value="audiencias"
                     className="data-[state=active]:bg-orange-500 data-[state=active]:text-white"
                   >
-                    Audiências
+                    AudiÃªncias
                   </TabsTrigger>
                 )}
               </TabsList>
@@ -436,7 +436,7 @@ export default function DashboardPage() {
                               if (r.ok) {
                                 const u = await r.json()
                                 setDCorrespondencias((prev)=>prev.map((x:any)=>x.id===u.id?u:x))
-                                // também refletir nos avisos locais, removendo os relacionados a esta correspondência
+                                // tambÃ©m refletir nos avisos locais, removendo os relacionados a esta correspondÃªncia
                                 setDAvisos((prev)=>prev.filter((a:any)=>!(a.titulo==='Nova correspondencia' && (a.mensagem||'').includes(corresp.remetente))))
                               }
                             }}
@@ -448,7 +448,7 @@ export default function DashboardPage() {
                 ) : (
                   <div className="text-center py-8 text-gray-500">
                     <Mail className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                    <p>Nenhuma correspondência encontrada</p>
+                    <p>Nenhuma correspondÃªncia encontrada</p>
                   </div>
                 )}
               </TabsContent>
@@ -506,8 +506,8 @@ export default function DashboardPage() {
               {podeReservarSalas && (
                 <TabsContent value="room-view" className="space-y-6">
                   <div className="text-center mb-6">
-                    <h3 className="text-xl font-bold text-black mb-2">conheça Nossa Sala</h3>
-                    <p className="text-gray-600">Veja todos os detalhes da sala disponível para suas reuniões</p>
+                    <h3 className="text-xl font-bold text-black mb-2">ConheÃ§a Nossa Sala</h3>
+                    <p className="text-gray-600">Veja todos os detalhes da sala disponÃ­vel para suas reuniÃµes</p>
                   </div>
 
                   <RoomView />
@@ -577,7 +577,7 @@ export default function DashboardPage() {
                   ) : (
                     <div className="text-center py-8 text-gray-500">
                       <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                      <p>Nenhuma audiência encontrada</p>
+                      <p>Nenhuma audiÃªncia encontrada</p>
                     </div>
                   )}
                 </TabsContent>
@@ -602,9 +602,6 @@ export default function DashboardPage() {
     </div>
   )
 }
-
-
-
 
 
 
