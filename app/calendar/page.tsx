@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
+import dynamic from "next/dynamic"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -12,11 +13,21 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Label } from "@/components/ui/label"
 
 import { CalendarIcon, Grid3X3, List, Eye, Plus, Building2, LogOut, Clock, CheckCircle, TrendingUp } from "lucide-react"
-import { CalendarGrid } from "@/components/calendar/calendar-grid"
+// CalendarGrid sem SSR para evitar hidratação/fuso
+const CalendarGrid = dynamic(
+  () => import("@/components/calendar/calendar-grid").then((m) => m.CalendarGrid),
+  { ssr: false }
+)
+
 import { BookingModal, type BookingData } from "@/components/calendar/booking-modal"
 import type { Reserva, Sala } from "@/lib/data"
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
+
+// util: converte "YYYY-MM-DD" (string) para Date LOCAL (00:00:00 local)
+function parseLocalYmd(ymd: string): Date {
+  return new Date(`${ymd}T00:00:00`)
+}
 
 export default function CalendarPage() {
   const router = useRouter()
@@ -48,17 +59,18 @@ export default function CalendarPage() {
       return
     }
 
+    // Carrega dados da API
     Promise.all([
       fetch("/api/salas").then((r) => r.json()),
-      fetch("/api/reservas/list").then((r) => r.json()),
+      fetch("/api/reservas").then((r) => r.json()),
     ])
       .then(([salasData, reservasData]) => {
-        setSalas(salasData)
-        const normalized: Reserva[] = (reservasData || []).map((r: any) => ({
-          ...r,
-          data: format(new Date(r.data), "yyyy-MM-dd"),
-        }))
-        setReservas(normalized)
+        setSalas(salasData as Sala[])
+        // API já devolve data em 'YYYY-MM-DD'; não converta aqui
+        setReservas((reservasData || []) as Reserva[])
+      })
+      .catch(error => {
+        console.error('Erro ao carregar dados:', error)
       })
       .finally(() => setLoading(false))
   }, [router])
@@ -87,6 +99,21 @@ export default function CalendarPage() {
     let valorTotal = (sala?.valorHora || 0) * horas
     if (user?.plano === "mensalista") valorTotal *= 0.8
 
+    // garantir 'YYYY-MM-DD' para a API (se for Date, montar manualmente)
+    // garantir 'YYYY-MM-DD' para a API (se for Date, montar manualmente)
+    // NÃO usar instanceof — o TS enxerga bookingData.data como string no seu tipo
+    let dataYmd: string
+    if (typeof bookingData.data === "string") {
+      dataYmd = bookingData.data.slice(0, 10)
+    } else {
+      const dt = new Date((bookingData as any).data) // força runtime-parse, sem brigar com o TS
+      const y = dt.getFullYear()
+      const m = String(dt.getMonth() + 1).padStart(2, "0")
+      const d = String(dt.getDate()).padStart(2, "0")
+      dataYmd = `${y}-${m}-${d}`
+    }
+
+
     const resp = await fetch("/api/reservas", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -94,7 +121,7 @@ export default function CalendarPage() {
         id,
         clienteId: user.id,
         salaId: bookingData.salaId,
-        data: bookingData.data,
+        data: dataYmd, // envia somente 'YYYY-MM-DD'
         horaInicio: bookingData.horaInicio,
         horaFim: bookingData.horaFim,
         observacoes: bookingData.observacoes,
@@ -103,23 +130,30 @@ export default function CalendarPage() {
     })
 
     if (resp.ok) {
-      const criada = await resp.json()
-      const criadaNorm: Reserva = { ...criada, data: format(new Date(criada.data), "yyyy-MM-dd") }
-      setReservas((prev) => [...prev, criadaNorm])
+      // REMENDO RÁPIDO: refetch total (igual ao F5) para padronizar a normalização
+      const todas: Reserva[] = await fetch("/api/reservas").then((r) => r.json())
+      setReservas(todas)
+
       setMessage("Reserva criada com sucesso! Aguardando confirmação.")
-      setTimeout(() => setMessage("") , 5000)
+      setTimeout(() => setMessage(""), 5000)
+
+      // (opcional) criar aviso
       try {
         const titulo = 'Agendamento criado'
-        const salaNome = salas.find(s=>s.id===bookingData.salaId)?.nome || bookingData.salaId
-        const mensagem = `Reserva em ${criadaNorm.data} ${bookingData.horaInicio}-${bookingData.horaFim} | Sala ${salaNome}`
-        await fetch(`/api/clientes/${user.id}/avisos`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ titulo, mensagem, tipo:'info', urgencia:'baixa' }) })
-      } catch {}
+        const salaNome = salas.find(s => s.id === bookingData.salaId)?.nome || bookingData.salaId
+        const msg = `Reserva em ${dataYmd} ${bookingData.horaInicio}-${bookingData.horaFim} | Sala ${salaNome}`
+        await fetch(`/api/clientes/${user.id}/avisos`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ titulo, mensagem: msg, tipo: 'info', urgencia: 'baixa' })
+        })
+      } catch { /* silencioso */ }
     } else if (resp.status === 409) {
       setMessage("Conflito de horário. Escolha outro horário.")
-      setTimeout(() => setMessage("") , 5000)
+      setTimeout(() => setMessage(""), 5000)
     } else {
       setMessage("Erro ao criar reserva.")
-      setTimeout(() => setMessage("") , 5000)
+      setTimeout(() => setMessage(""), 5000)
     }
   }
 
@@ -133,18 +167,18 @@ export default function CalendarPage() {
 
   if (!user) return null
 
-  // Filtrar reservas do usuário
-  const userReservas = reservas.filter((r) => r.clienteId === user.id)
+  // Exibir todas as reservas para todos os clientes
+  const userReservas = reservas;
 
-  // Estatísticas
+  // Estatísticas somente do usuário logado
   const stats = {
-    total: userReservas.length,
-    confirmadas: userReservas.filter((r) => r.status === "confirmada").length,
-    pendentes: userReservas.filter((r) => r.status === "pendente").length,
-    esteMes: userReservas.filter((r) => {
-      const reservaDate = new Date(r.data)
+    total: reservas.filter((r) => r.clienteId === user.id).length,
+    confirmadas: reservas.filter((r) => r.clienteId === user.id && r.status === "confirmada").length,
+    pendentes: reservas.filter((r) => r.clienteId === user.id && r.status === "pendente").length,
+    esteMes: reservas.filter((r) => {
+      const reservaDate = parseLocalYmd((r as any).data as string)
       const now = new Date()
-      return reservaDate.getMonth() === now.getMonth() && reservaDate.getFullYear() === now.getFullYear()
+      return r.clienteId === user.id && reservaDate.getMonth() === now.getMonth() && reservaDate.getFullYear() === now.getFullYear()
     }).length,
   }
 
@@ -318,11 +352,12 @@ export default function CalendarPage() {
             {userReservas.length > 0 ? (
               <div className="space-y-3">
                 {userReservas
-                  .filter((r) => new Date(r.data) >= new Date(new Date().toDateString()))
-                  .sort((a, b) => new Date(a.data).getTime() - new Date(b.data).getTime())
+                  .filter((r) => parseLocalYmd((r as any).data as string) >= new Date(new Date().toDateString()))
+                  .sort((a, b) => parseLocalYmd((a as any).data as string).getTime() - parseLocalYmd((b as any).data as string).getTime())
                   .slice(0, 5)
                   .map((reserva) => {
                     const sala = salas.find((s) => s.id === reserva.salaId)
+                    const dataLocal = parseLocalYmd((reserva as any).data as string)
                     return (
                       <div
                         key={reserva.id}
@@ -331,20 +366,19 @@ export default function CalendarPage() {
                       >
                         <div className="flex items-center space-x-4">
                           <div
-                            className={`w-3 h-3 rounded-full ${
-                              reserva.status === "confirmada"
-                                ? "bg-green-500"
-                                : reserva.status === "pendente"
-                                  ? "bg-yellow-500"
-                                  : reserva.status === "em-andamento"
-                                    ? "bg-blue-500"
-                                    : "bg-red-500"
-                            }`}
+                            className={`w-3 h-3 rounded-full ${reserva.status === "confirmada"
+                              ? "bg-green-500"
+                              : reserva.status === "pendente"
+                                ? "bg-yellow-500"
+                                : reserva.status === "em-andamento"
+                                  ? "bg-blue-500"
+                                  : "bg-red-500"
+                              }`}
                           />
                           <div>
                             <p className="font-medium">{sala?.nome}</p>
                             <p className="text-sm text-gray-600">
-                              {format(new Date(reserva.data), "d 'de' MMM", { locale: ptBR })} â€¢ {reserva.horaInicio} - {reserva.horaFim}
+                              {format(dataLocal, "d 'de' MMM", { locale: ptBR })} • {reserva.horaInicio} - {reserva.horaFim}
                             </p>
                           </div>
                         </div>
@@ -423,7 +457,7 @@ export default function CalendarPage() {
                 <div>
                   <Label className="text-sm font-medium text-gray-600">Data</Label>
                   <p className="font-medium">
-                    {format(new Date(selectedReserva.data), "d 'de' MMMM 'de' yyyy", { locale: ptBR })}
+                    {format(parseLocalYmd((selectedReserva as any).data as string), "d 'de' MMMM 'de' yyyy", { locale: ptBR })}
                   </p>
                 </div>
                 <div>
@@ -447,7 +481,8 @@ export default function CalendarPage() {
                   <p className="text-lg font-bold text-green-600">R$ {selectedReserva.valorTotal.toFixed(2)}</p>
                 </div>
 
-                {selectedReserva.status === "pendente" && (
+                {/* Só permite edição/cancelamento para admin ou criador */}
+                {selectedReserva.status === "pendente" && (user.isAdmin || selectedReserva.clienteId === user.id) && (
                   <Button variant="outline" size="sm">
                     Cancelar Reserva
                   </Button>
@@ -460,8 +495,3 @@ export default function CalendarPage() {
     </div>
   )
 }
-
-
-
-
-

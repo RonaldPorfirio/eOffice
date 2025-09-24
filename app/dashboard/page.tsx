@@ -6,12 +6,32 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Building2, Calendar, Mail, AlertTriangle, CheckCircle, LogOut, FileText, Bell, ArrowRight, Eye } from "lucide-react"
+import {
+  Building2,
+  Calendar,
+  Mail,
+  AlertTriangle,
+  CheckCircle,
+  LogOut,
+  FileText,
+  Bell,
+  ArrowRight,
+  Eye,
+} from "lucide-react"
 import { RoomView } from "@/components/room-view"
 import { getPlanoInfo } from "@/lib/data"
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 const safeFormatDate = (value?: string | Date, fmt = "d 'de' MMM 'de' yyyy") => {
   if (!value) return "-"
@@ -29,7 +49,7 @@ export default function DashboardPage() {
   const [dAvisos, setDAvisos] = useState<any[]>([])
   const [dSalas, setDSalas] = useState<any[]>([])
   const [dCliente, setDCliente] = useState<any | null>(null)
-  const [activeTab, setActiveTab] = useState('correspondencias')
+  const [activeTab, setActiveTab] = useState("correspondencias")
   const [clearing, setClearing] = useState(false)
   const [confirmClearOpen, setConfirmClearOpen] = useState(false)
   useEffect(() => {
@@ -48,6 +68,8 @@ export default function DashboardPage() {
 
     setUser(parsedUser)
 
+    console.log("[v0] Carregando dados para usuário:", parsedUser)
+
     Promise.all([
       fetch(`/api/clientes/${parsedUser.id}/reservas`).then((r) => r.json()),
       fetch(`/api/clientes/${parsedUser.id}/correspondencias`).then((r) => r.json()),
@@ -57,12 +79,23 @@ export default function DashboardPage() {
       fetch(`/api/clientes`).then((r) => r.json()),
     ])
       .then(([resv, corr, aud, avs, salas, clientes]) => {
+        console.log("[v0] Dados carregados:", {
+          reservas: resv?.length || 0,
+          correspondencias: corr?.length || 0,
+          audiencias: aud?.length || 0,
+          avisos: avs?.length || 0,
+          salas: salas?.length || 0,
+          clientes: clientes?.length || 0,
+        })
         setDReservas(resv || [])
         setDCorrespondencias(corr || [])
         setDAudiencias(aud || [])
         setDAvisos(avs || [])
         setDSalas(salas || [])
         setDCliente((clientes || []).find((c: any) => c.id === parsedUser.id) || null)
+      })
+      .catch((error) => {
+        console.error("[v0] Erro ao carregar dados:", error)
       })
       .finally(() => setLoading(false))
   }, [router])
@@ -72,20 +105,41 @@ export default function DashboardPage() {
     if (!user) return
     let stopped = false
     const load = () => {
-      fetch(`/api/clientes/${user.id}/avisos`).then((r) => r.json()).then((avs) => {
-        if (!stopped) setDAvisos(avs || [])
-      }).catch(() => {})
+      fetch(`/api/clientes/${user.id}/avisos`)
+        .then((r) => r.json())
+        .then((avs) => {
+          console.log("[v0] Avisos atualizados:", avs?.length || 0)
+          if (!stopped) setDAvisos(avs || [])
+        })
+        .catch(() => { })
     }
     load()
     const onFocus = () => load()
-    window.addEventListener('focus', onFocus)
+    window.addEventListener("focus", onFocus)
     const iv = setInterval(load, 15000)
-    return () => { stopped = true; window.removeEventListener('focus', onFocus); clearInterval(iv) }
+    return () => {
+      stopped = true
+      window.removeEventListener("focus", onFocus)
+      clearInterval(iv)
+    }
   }, [user])
 
   const handleLogout = () => {
     localStorage.removeItem("user")
     router.push("/login")
+  }
+
+  const handleClearAvisos = async () => {
+    if (!user) return
+    setClearing(true)
+    try {
+      const r = await fetch(`/api/clientes/${user.id}/avisos`, { method: "DELETE" })
+      if (r.ok) {
+        setDAvisos([])
+      }
+    } finally {
+      setClearing(false)
+    }
   }
 
   if (loading) {
@@ -107,8 +161,8 @@ export default function DashboardPage() {
   const avisos = dAvisos
   const planoInfo = getPlanoInfo(user.plano)
 
-  const podeReservarSalas = user.plano === 'mensalista'
-  const temAcessoAudiencias = user.plano === 'mensalista'
+  const podeReservarSalas = user.plano === "mensalista"
+  const temAcessoAudiencias = user.plano === "mensalista"
 
   // Estatísticas
   const stats = {
@@ -116,19 +170,6 @@ export default function DashboardPage() {
     correspondenciasPendentes: correspondencias.filter((c) => c.status === "aguardando").length,
     audienciasPendentes: audiencias.filter((a) => a.status === "agendada").length,
     avisosNaoLidos: avisos.filter((a) => !a.lido).length,
-  }
-
-  const handleClearAvisos = async () => {
-    if (!user) return
-    setClearing(true)
-    try {
-      const r = await fetch(`/api/clientes/${user.id}/avisos`, { method: 'DELETE' })
-      if (r.ok) {
-        setDAvisos([])
-      }
-    } finally {
-      setClearing(false)
-    }
   }
 
   return (
@@ -246,7 +287,11 @@ export default function DashboardPage() {
               <Button
                 className="w-full justify-between bg-transparent border-orange-500 text-orange-500 hover:bg-orange-50"
                 variant="outline"
-                onClick={() => { setActiveTab('correspondencias'); const el=document.getElementById('tabs-section'); el?.scrollIntoView({ behavior:'smooth', block:'start' }) }}
+                onClick={() => {
+                  setActiveTab("correspondencias")
+                  const el = document.getElementById("tabs-section")
+                  el?.scrollIntoView({ behavior: "smooth", block: "start" })
+                }}
               >
                 <div className="flex items-center">
                   <Mail className="mr-2 h-4 w-4" />
@@ -259,7 +304,11 @@ export default function DashboardPage() {
                 <Button
                   className="w-full justify-between bg-transparent border-orange-500 text-orange-500 hover:bg-orange-50"
                   variant="outline"
-                  onClick={() => { setActiveTab('audiencias'); const el=document.getElementById('tabs-section'); el?.scrollIntoView({ behavior:'smooth', block:'start' }) }}
+                  onClick={() => {
+                    setActiveTab("audiencias")
+                    const el = document.getElementById("tabs-section")
+                    el?.scrollIntoView({ behavior: "smooth", block: "start" })
+                  }}
                 >
                   <div className="flex items-center">
                     <FileText className="mr-2 h-4 w-4" />
@@ -299,7 +348,9 @@ export default function DashboardPage() {
 
                 {cliente && (
                   <div className="pt-4 border-t border-gray-200">
-                    <p className="text-xs text-gray-500">Cliente desde: {safeFormatDate(cliente?.dataInicio, "d 'de' MMM 'de' yyyy")}</p>
+                    <p className="text-xs text-gray-500">
+                      Cliente desde: {safeFormatDate(cliente?.dataInicio, "d 'de' MMM 'de' yyyy")}
+                    </p>
                   </div>
                 )}
               </div>
@@ -315,8 +366,8 @@ export default function DashboardPage() {
                     Avisos Recentes
                   </CardTitle>
                   {avisos.length > 0 && (
-                    <Button size="sm" variant="outline" onClick={()=>setConfirmClearOpen(true)} disabled={clearing}>
-                      {clearing ? 'Limpando...' : 'Limpar'}
+                    <Button size="sm" variant="outline" onClick={() => setConfirmClearOpen(true)} disabled={clearing}>
+                      {clearing ? "Limpando..." : "Limpar"}
                     </Button>
                   )}
                 </div>
@@ -327,13 +378,12 @@ export default function DashboardPage() {
                   {avisos.slice(0, 3).map((aviso) => (
                     <div
                       key={aviso.id}
-                      className={`p-3 rounded-lg border ${
-                        aviso.urgencia === "alta"
+                      className={`p-3 rounded-lg border ${aviso.urgencia === "alta"
                           ? "bg-red-50 border-red-200"
                           : aviso.urgencia === "media"
                             ? "bg-orange-50 border-orange-200"
                             : "bg-blue-50 border-blue-200"
-                      }`}
+                        }`}
                     >
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
@@ -355,7 +405,9 @@ export default function DashboardPage() {
         <Card className="border-gray-200">
           <CardHeader>
             <CardTitle className="text-black">Atividades e Informações</CardTitle>
-            <CardDescription className="text-gray-600">{podeReservarSalas ? "Acompanhe suas atividades e conheça nossa sala" : "Acompanhe suas atividades"}</CardDescription>
+            <CardDescription className="text-gray-600">
+              {podeReservarSalas ? "Acompanhe suas atividades e conheça nossa sala" : "Acompanhe suas atividades"}
+            </CardDescription>
           </CardHeader>
           <CardContent id="tabs-section">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -402,16 +454,15 @@ export default function DashboardPage() {
                     >
                       <div className="flex items-center space-x-4">
                         <div
-                          className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                            corresp.urgente ? "bg-red-100" : "bg-orange-100"
-                          }`}
+                          className={`w-10 h-10 rounded-full flex items-center justify-center ${corresp.urgente ? "bg-red-100" : "bg-orange-100"
+                            }`}
                         >
                           <Mail className={`h-5 w-5 ${corresp.urgente ? "text-red-600" : "text-orange-600"}`} />
                         </div>
                         <div>
                           <p className="font-medium text-black">{corresp.remetente}</p>
                           <p className="text-sm text-gray-600 capitalize">
-                            {corresp.tipo} â€¢ {corresp.dataRecebimento}
+                            {corresp.tipo} • {corresp.dataRecebimento}
                           </p>
                         </div>
                       </div>
@@ -427,20 +478,34 @@ export default function DashboardPage() {
                         >
                           {corresp.status}
                         </Badge>
-                        {corresp.status === 'aguardando' && (
+                        {corresp.status === "aguardando" && (
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={async ()=>{
-                              const r = await fetch(`/api/correspondencias/${corresp.id}`, { method:'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ status: 'coletada' }) })
+                            onClick={async () => {
+                              const r = await fetch(`/api/correspondencias/${corresp.id}`, {
+                                method: "PATCH",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ status: "coletada" }),
+                              })
                               if (r.ok) {
                                 const u = await r.json()
-                                setDCorrespondencias((prev)=>prev.map((x:any)=>x.id===u.id?u:x))
+                                setDCorrespondencias((prev) => prev.map((x: any) => (x.id === u.id ? u : x)))
                                 // também refletir nos avisos locais, removendo os relacionados a esta correspondência
-                                setDAvisos((prev)=>prev.filter((a:any)=>!(a.titulo==='Nova correspondencia' && (a.mensagem||'').includes(corresp.remetente))))
+                                setDAvisos((prev) =>
+                                  prev.filter(
+                                    (a: any) =>
+                                      !(
+                                        a.titulo === "Nova correspondencia" &&
+                                        (a.mensagem || "").includes(corresp.remetente)
+                                      ),
+                                  ),
+                                )
                               }
                             }}
-                          >Marcar como coletada</Button>
+                          >
+                            Marcar como coletada
+                          </Button>
                         )}
                       </div>
                     </div>
@@ -457,7 +522,7 @@ export default function DashboardPage() {
                 <TabsContent value="reservas" className="space-y-4">
                   {reservas.length > 0 ? (
                     reservas.slice(0, 5).map((reserva) => {
-                      const sala = dSalas.find((s:any) => s.id === reserva.salaId)
+                      const sala = dSalas.find((s: any) => s.id === reserva.salaId)
                       return (
                         <div
                           key={reserva.id}
@@ -470,7 +535,7 @@ export default function DashboardPage() {
                             <div>
                               <p className="font-medium text-black">{sala?.nome}</p>
                               <p className="text-sm text-gray-600">
-                                {reserva.data} â€¢ {reserva.horaInicio} - {reserva.horaFim}
+                                {reserva.data} • {reserva.horaInicio} - {reserva.horaFim}
                               </p>
                             </div>
                           </div>
@@ -524,28 +589,26 @@ export default function DashboardPage() {
                       >
                         <div className="flex items-center space-x-4">
                           <div
-                            className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                              audiencia.urgencia === "alta"
+                            className={`w-10 h-10 rounded-full flex items-center justify-center ${audiencia.urgencia === "alta"
                                 ? "bg-red-100"
                                 : audiencia.urgencia === "media"
                                   ? "bg-orange-100"
                                   : "bg-blue-100"
-                            }`}
+                              }`}
                           >
                             <FileText
-                              className={`h-5 w-5 ${
-                                audiencia.urgencia === "alta"
+                              className={`h-5 w-5 ${audiencia.urgencia === "alta"
                                   ? "text-red-600"
                                   : audiencia.urgencia === "media"
                                     ? "text-orange-600"
                                     : "text-blue-600"
-                              }`}
+                                }`}
                             />
                           </div>
                           <div>
                             <p className="font-medium text-black">{audiencia.tribunal}</p>
                             <p className="text-sm text-gray-600">
-                              {audiencia.data} â€¢ {audiencia.horario}
+                              {audiencia.data} • {audiencia.horario}
                             </p>
                             <p className="text-xs text-gray-500">{audiencia.processo}</p>
                           </div>
@@ -587,25 +650,18 @@ export default function DashboardPage() {
         </Card>
       </div>
 
-    <AlertDialog open={confirmClearOpen} onOpenChange={setConfirmClearOpen}>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>Limpar avisos</AlertDialogTitle>
-          <AlertDialogDescription>Tem certeza que deseja remover todos os avisos?</AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel>Cancelar</AlertDialogCancel>
-          <AlertDialogAction onClick={handleClearAvisos}>Limpar</AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+      <AlertDialog open={confirmClearOpen} onOpenChange={setConfirmClearOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Limpar avisos</AlertDialogTitle>
+            <AlertDialogDescription>Tem certeza que deseja remover todos os avisos?</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleClearAvisos}>Limpar</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
-
-
-
-
-
-
-

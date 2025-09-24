@@ -1,7 +1,6 @@
 ﻿"use client"
 
 import type React from "react"
-
 import { useState, useEffect } from "react"
 import { useRouter, useParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
@@ -17,10 +16,15 @@ import { format, addDays } from "date-fns"
 import type { Sala } from "@/lib/data"
 import Image from "next/image"
 
-// Mapeia imagens locais para cada sala
+const horarios = [
+  "08:00", "08:30", "09:00", "09:30", "10:00", "10:30",
+  "11:00", "11:30", "12:00", "12:30", "13:00", "13:30",
+  "14:00", "14:30", "15:00", "15:30", "16:00", "16:30",
+  "17:00", "17:30", "18:00", "18:30"
+]
+
 const getSalaImage = (sala: Sala) => {
   const map: Record<string, string> = {
-    // Mapeamento organizado por sala (A, B, C, D)
     "sala-1": "/salas/sala-a.jpeg",
     "sala-2": "/salas/sala-b.jpeg",
     "sala-3": "/salas/sala-c.jpeg",
@@ -28,31 +32,6 @@ const getSalaImage = (sala: Sala) => {
   }
   return map[sala.id] || sala.imagem || "/placeholder.svg?height=200&width=400&query=meeting+room"
 }
-
-const horarios = [
-  "08:00",
-  "08:30",
-  "09:00",
-  "09:30",
-  "10:00",
-  "10:30",
-  "11:00",
-  "11:30",
-  "12:00",
-  "12:30",
-  "13:00",
-  "13:30",
-  "14:00",
-  "14:30",
-  "15:00",
-  "15:30",
-  "16:00",
-  "16:30",
-  "17:00",
-  "17:30",
-  "18:00",
-  "18:30",
-]
 
 export default function ReservarSalaPage() {
   const router = useRouter()
@@ -65,19 +44,14 @@ export default function ReservarSalaPage() {
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
   const [sala, setSala] = useState<Sala | null>(null)
-
-  // Dados do formulÃ¡rio
   const [formData, setFormData] = useState({
-    data: "",
+    data: format(new Date(), "yyyy-MM-dd"),
     horaInicio: "",
     horaFim: "",
     observacoes: "",
   })
 
-  // sala carregada via API
-
   useEffect(() => {
-    // Verificar se usuÃ¡rio estÃ¡ logado
     const userData = localStorage.getItem("user")
     if (!userData) {
       router.push("/login")
@@ -87,16 +61,14 @@ export default function ReservarSalaPage() {
     const parsedUser = JSON.parse(userData)
     setUser(parsedUser)
 
-    // Verificar se tem acesso Ã s salas
     if (parsedUser.plano !== "mensalista") {
       router.push("/dashboard")
       return
     }
 
-    // Buscar sala
     fetch(`/api/salas/${salaId}`)
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => {
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
         if (!data) {
           router.push("/salas")
           return
@@ -104,22 +76,12 @@ export default function ReservarSalaPage() {
         setSala(data)
       })
       .finally(() => setLoading(false))
-
-    // Definir data mÃ­nima como hoje
-    const hoje = format(new Date(), "yyyy-MM-dd")
-    setFormData((prev) => ({ ...prev, data: hoje }))
-
-    setLoading(false)
   }, [router, salaId])
 
   const handleInputChange = (field: string, value: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      [field]: value,
-    }))
+    setFormData(prev => ({ ...prev, [field]: value }))
   }
 
-  // Calcular valor da reserva
   const valorReserva = (() => {
     if (!sala || !formData.horaInicio || !formData.horaFim || !user) return 0
     const inicio = new Date(`2024-01-01T${formData.horaInicio}`)
@@ -130,11 +92,7 @@ export default function ReservarSalaPage() {
     return total
   })()
 
-  // HorÃ¡rios disponÃ­veis para fim baseado no inÃ­cio
-  const horariosDisponiveis = horarios.filter((h) => {
-    if (!formData.horaInicio) return true
-    return h > formData.horaInicio
-  })
+  const horariosDisponiveis = horarios.filter(h => !formData.horaInicio || h > formData.horaInicio)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -143,44 +101,49 @@ export default function ReservarSalaPage() {
     setSuccess("")
 
     try {
-      // ValidaÃ§Ãµes
       if (!formData.data || !formData.horaInicio || !formData.horaFim) {
-        setError("Todos os campos obrigatÃ³rios devem ser preenchidos")
+        setError("Preencha todos os campos obrigatórios")
         return
       }
 
-      if (formData.horaInicio >= formData.horaFim) {
-        setError("HorÃ¡rio de fim deve ser posterior ao horÃ¡rio de inÃ­cio")
-        return
+      const reserva = {
+        id: `res-${Date.now()}`,
+        clienteId: user.id,
+        salaId,
+        data: formData.data,
+        horaInicio: formData.horaInicio,
+        horaFim: formData.horaFim,
+        observacoes: formData.observacoes,
+        valorTotal: valorReserva,
+        status: "pendente"
       }
 
-      // Verificar se a data nÃ£o Ã© no passado
-      const dataReserva = new Date(formData.data)
-      const hoje = new Date()
-      hoje.setHours(0, 0, 0, 0)
+      const resp = await fetch("/api/reservas", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(reserva)
+      })
 
-      if (dataReserva < hoje) {
-        setError("NÃ£o Ã© possÃ­vel reservar para datas passadas")
-        return
+      if (resp.ok) {
+        setSuccess("Reserva criada com sucesso! Redirecionando...")
+        setTimeout(() => router.push("/calendar"), 2000)
+
+        // Opcional: criar aviso
+        try {
+          const titulo = "Nova reserva criada"
+          const mensagem = `Reserva em ${formData.data} ${formData.horaInicio}-${formData.horaFim} | Sala ${sala?.nome}`
+          await fetch(`/api/clientes/${user.id}/avisos`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ titulo, mensagem, tipo: "info", urgencia: "baixa" })
+          })
+        } catch { }
+      } else {
+        const error = await resp.text()
+        throw new Error(error || "Erro ao criar reserva")
       }
-
-      // Verificar conflitos
-      if (verificarConflito(salaId, formData.data, formData.horaInicio, formData.horaFim)) {
-        setError("JÃ¡ existe uma reserva para este horÃ¡rio. Escolha outro horÃ¡rio.")
-        return
-      }
-
-      // Simular criaÃ§Ã£o da reserva
-      await new Promise((resolve) => setTimeout(resolve, 2000))
-
-      setSuccess("Reserva criada com sucesso! VocÃª serÃ¡ redirecionado para o calendÃ¡rio.")
-
-      // Redirecionar apÃ³s 3 segundos
-      setTimeout(() => {
-        router.push("/calendar")
-      }, 3000)
-    } catch (err) {
-      setError("Erro ao criar reserva. Tente novamente.")
+    } catch (err: any) {
+      setError(err.message || "Erro ao criar reserva")
     } finally {
       setSubmitting(false)
     }
@@ -189,25 +152,22 @@ export default function ReservarSalaPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600" />
       </div>
     )
   }
 
-  if (!user || !sala) {
-    return null
-  }
+  if (!user || !sala) return null
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
       <header className="bg-white shadow-sm border-b">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <Button variant="ghost" size="sm" onClick={() => router.push("/salas")}>
                 <ArrowLeft className="h-4 w-4 mr-2" />
-                Voltar Ã s Salas
+                Voltar às Salas
               </Button>
               <div className="flex items-center space-x-3">
                 <Building2 className="h-8 w-8 text-blue-600" />
@@ -217,7 +177,6 @@ export default function ReservarSalaPage() {
                 </div>
               </div>
             </div>
-
             <Badge className="bg-blue-100 text-blue-800">Mensalista</Badge>
           </div>
         </div>
@@ -225,9 +184,7 @@ export default function ReservarSalaPage() {
 
       <div className="container mx-auto px-4 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* FormulÃ¡rio de Reserva */}
           <div>
-            {/* Mensagens */}
             {success && (
               <Alert className="mb-6 border-green-200 bg-green-50">
                 <CheckCircle className="h-4 w-4" />
@@ -248,7 +205,7 @@ export default function ReservarSalaPage() {
                   <Calendar className="h-5 w-5 mr-2" />
                   Dados da Reserva
                 </CardTitle>
-                <CardDescription>Preencha as informaÃ§Ãµes para sua reserva</CardDescription>
+                <CardDescription>Preencha as informações para sua reserva</CardDescription>
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleSubmit} className="space-y-6">
@@ -264,12 +221,12 @@ export default function ReservarSalaPage() {
                       required
                       disabled={submitting}
                     />
-                    <p className="text-xs text-gray-500">Reservas podem ser feitas com atÃ© 30 dias de antecedÃªncia</p>
+                    <p className="text-xs text-gray-500">Reservas podem ser feitas com até 30 dias de antecedência</p>
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="horaInicio">HorÃ¡rio de InÃ­cio *</Label>
+                      <Label htmlFor="horaInicio">Horário de Início *</Label>
                       <Select
                         value={formData.horaInicio}
                         onValueChange={(value) => handleInputChange("horaInicio", value)}
@@ -277,7 +234,7 @@ export default function ReservarSalaPage() {
                         disabled={submitting}
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder="InÃ­cio" />
+                          <SelectValue placeholder="Início" />
                         </SelectTrigger>
                         <SelectContent>
                           {horarios.map((horario) => (
@@ -290,7 +247,7 @@ export default function ReservarSalaPage() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="horaFim">HorÃ¡rio de Fim *</Label>
+                      <Label htmlFor="horaFim">Horário de Fim *</Label>
                       <Select
                         value={formData.horaFim}
                         onValueChange={(value) => handleInputChange("horaFim", value)}
@@ -312,10 +269,10 @@ export default function ReservarSalaPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="observacoes">ObservaÃ§Ãµes</Label>
+                    <Label htmlFor="observacoes">Observações</Label>
                     <Textarea
                       id="observacoes"
-                      placeholder="InformaÃ§Ãµes adicionais sobre a reuniÃ£o..."
+                      placeholder="Informações adicionais sobre a reunião..."
                       value={formData.observacoes}
                       onChange={(e) => handleInputChange("observacoes", e.target.value)}
                       rows={4}
@@ -323,7 +280,6 @@ export default function ReservarSalaPage() {
                     />
                   </div>
 
-                  {/* Resumo do Valor */}
                   {valorReserva > 0 && (
                     <Card className="bg-green-50 border-green-200">
                       <CardContent className="p-4">
@@ -363,7 +319,6 @@ export default function ReservarSalaPage() {
             </Card>
           </div>
 
-          {/* Detalhes da Sala */}
           <div className="space-y-6">
             <Card>
               <CardHeader>
@@ -371,7 +326,6 @@ export default function ReservarSalaPage() {
                 <CardDescription>{sala.descricao}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                {/* Imagem da sala */}
                 <div className="aspect-video bg-gray-100 rounded-lg overflow-hidden">
                   <Image
                     src={getSalaImage(sala)}
@@ -382,7 +336,6 @@ export default function ReservarSalaPage() {
                   />
                 </div>
 
-                {/* InformaÃ§Ãµes bÃ¡sicas */}
                 <div className="grid grid-cols-2 gap-4">
                   <div className="flex items-center space-x-2">
                     <Users className="h-4 w-4 text-gray-500" />
@@ -393,5 +346,11 @@ export default function ReservarSalaPage() {
                     <span className="text-sm">Máximo: 6 pessoas</span>
                   </div>
                 </div>
-
-
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
