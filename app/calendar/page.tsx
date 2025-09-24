@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Label } from "@/components/ui/label"
 
+
 import { CalendarIcon, Grid3X3, List, Eye, Plus, Building2, LogOut, Clock, CheckCircle, TrendingUp } from "lucide-react"
 // CalendarGrid sem SSR para evitar hidratação/fuso
 const CalendarGrid = dynamic(

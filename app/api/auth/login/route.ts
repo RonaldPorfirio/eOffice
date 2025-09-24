@@ -1,41 +1,110 @@
+// app/api/auth/login/route.ts
 import { NextResponse } from "next/server"
-import { prisma } from "@/lib/db"
 import bcrypt from "bcryptjs"
+import { prisma } from "@/lib/db"
+
+// Garanta que esta rota NÃO rode no Edge
+export const runtime = "nodejs"
+export const dynamic = "force-dynamic"
+
+// Opcional: evite qualquer cache
+export const revalidate = 0
+
+type LoginBody = {
+  email?: string
+  senha?: string
+}
 
 export async function POST(req: Request) {
   try {
-    const { email, senha } = await req.json()
+    const body = (await req.json()) as LoginBody
+    const email = (body.email || "").trim().toLowerCase()
+    const senha = body.senha || ""
+
+    // validações básicas
     if (!email || !senha) {
-      return NextResponse.json({ error: "Email e senha são obrigatórios" }, { status: 400 })
+      return NextResponse.json(
+        { error: "Informe e-mail e senha." },
+        { status: 400 }
+      )
     }
 
+    // busca usuário
     const usuario = await prisma.usuario.findUnique({
       where: { email },
-      include: { cliente: true },
+      // Se precisar de dados do cliente para preencher plano depois:
+      select: {
+        id: true,
+        nome: true,
+        email: true,
+        senha: true,
+        role: true,       // 'admin' | 'cliente'
+        clienteId: true,  // pode ser null
+      },
     })
 
-    if (!usuario || !bcrypt.compareSync(senha, usuario.senha)) {
-      return NextResponse.json({ error: "Email ou senha incorretos" }, { status: 401 })
+    // não achou
+    if (!usuario) {
+      // log leve pra debug sem vazar senha
+      console.error("[AUTH] Usuario não encontrado:", email)
+      return NextResponse.json(
+        { error: "Credenciais inválidas." },
+        { status: 401 }
+      )
     }
 
-    const isAdmin = usuario.role === "admin"
-    if (!isAdmin) {
-      // Bloqueia acesso de cliente desativado
-      if (!usuario.cliente || usuario.cliente.status !== "ativo") {
-        return NextResponse.json({ error: "Conta desativada. Contate o administrador." }, { status: 403 })
-      }
+    // compara senha (bcryptjs funciona em serverless/Node)
+    const ok = await bcrypt.compare(senha, usuario.senha)
+    if (!ok) {
+      console.error("[AUTH] Senha incorreta para:", email)
+      return NextResponse.json(
+        { error: "Credenciais inválidas." },
+        { status: 401 }
+      )
     }
-    const userPayload = {
-      id: isAdmin ? "admin" : usuario.cliente?.id,
+
+    // Monta objeto esperado pelo front:
+    // - Você usa `user.tipo` (admin/cliente) e, no calendário, verifica `user.plano`
+    //   quando o tipo é cliente. Para admin, o AdminPage espera `parsed.tipo === "admin"`.
+    let payload: any = {
+      id: usuario.id,
       nome: usuario.nome,
       email: usuario.email,
-      tipo: isAdmin ? "admin" : "cliente",
-      plano: isAdmin ? "admin" : usuario.cliente?.plano,
+      tipo: usuario.role, // "admin" | "cliente"
     }
 
-    const redirect = isAdmin ? "/admin" : "/dashboard"
-    return NextResponse.json({ success: true, user: userPayload, redirect })
-  } catch (e) {
-    return NextResponse.json({ error: "Erro interno" }, { status: 500 })
+    if (usuario.role === "cliente" && usuario.clienteId) {
+      // busca o cliente para trazer o plano (comercial/fiscal/mensalista)
+      const cliente = await prisma.cliente.findUnique({
+        where: { id: usuario.clienteId },
+        select: { id: true, plano: true },
+      })
+
+      // Plano é usado no calendário do cliente
+      payload = {
+        ...payload,
+        clienteId: cliente?.id ?? usuario.clienteId,
+        plano: cliente?.plano ?? "mensalista", // fallback conservador
+      }
+    } else {
+      // Admin: alguns trechos checam isAdmin/tipo; aqui mantemos 'tipo'
+      payload = {
+        ...payload,
+        isAdmin: true, // se há algum trecho antigo lendo isso
+      }
+    }
+
+    // Retorna JSON consumido pelo front (ele faz localStorage.setItem("user", ...))
+    return NextResponse.json(payload, { status: 200 })
+  } catch (err: any) {
+    // Loga stack no runtime da Vercel para você ver nos Logs
+    console.error("[AUTH] Erro inesperado no login:", {
+      message: err?.message,
+      stack: err?.stack,
+    })
+    return NextResponse.json(
+      { error: "Erro interno ao autenticar." },
+      { status: 500 }
+    )
   }
 }
