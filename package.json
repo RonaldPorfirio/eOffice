@@ -6,7 +6,8 @@
         "dev": "next dev",
         "build": "next build",
         "start": "next start",
-        "lint": "next lint"
+        "lint": "next lint",
+        "postinstall": "prisma generate"
     },
     "dependencies": {
         "@hookform/resolvers": "^3.9.1",
@@ -72,7 +73,9 @@
         "postcss": "^8.5",
         "tailwindcss": "^3.4.17",
         "ts-node": "^10.9.2",
-        "typescript": "5.7.3"
+        "typescript": "5.7.3",
+        "prisma": "6.16.2"
+        
     },
     "prisma": {
         "seed": "node prisma/seed.cjs"
