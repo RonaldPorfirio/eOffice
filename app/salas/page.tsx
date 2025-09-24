@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
@@ -89,7 +89,7 @@ export default function SalasPage() {
                 <Building2 className="h-8 w-8 text-blue-600" />
                 <div>
                   <h1 className="text-xl font-bold text-gray-900">Salas de Reunião</h1>
-                  <p className="text-sm text-gray-600">Escolha a sala ideal para sua reunião</p>
+                  <p className="text-sm text-gray-600">Escolha a sala ideal para sua Reunião</p>
                 </div>
               </div>
             </div>
@@ -115,7 +115,7 @@ export default function SalasPage() {
         <Alert className="mb-8 border-blue-200 bg-blue-50">
           <CheckCircle className="h-4 w-4" />
           <AlertDescription className="text-blue-800">
-            <strong>Plano Mensalista:</strong> Você tem acesso completo às salas de reunião com 20% de desconto em todas
+            <strong>Plano Mensalista:</strong> Você tem acesso completo às salas de Reunião com 20% de desconto em todas
             as reservas!
           </AlertDescription>
         </Alert>
@@ -138,7 +138,7 @@ export default function SalasPage() {
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-xl">{sala.nome}</CardTitle>
                   <Badge variant={sala.disponivel ? "default" : "destructive"}>
-                    {sala.disponivel ? "Disponível" : "Indisponível"}
+                    {sala.disponivel ? "Disponível" : "InDisponível"}
                   </Badge>
                 </div>
                 <CardDescription>{sala.descricao}</CardDescription>
@@ -149,11 +149,11 @@ export default function SalasPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="flex items-center space-x-2">
                     <Users className="h-4 w-4 text-gray-500" />
-                    <span className="text-sm">Até {sala.capacidade} pessoas</span>
+                    <span className="text-sm">Recomendado: 4 pessoas</span>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <DollarSign className="h-4 w-4 text-gray-500" />
-                    <span className="text-sm">R$ {sala.valorHora}/hora</span>
+                    <Users className="h-4 w-4 text-gray-500" />
+                    <span className="text-sm">Máximo: 6 pessoas</span>
                   </div>
                 </div>
 
@@ -172,7 +172,7 @@ export default function SalasPage() {
 
                 {/* Recursos disponíveis */}
                 <div>
-                  <h4 className="font-medium mb-2">Recursos Disponíveis</h4>
+                  <h4 className="font-medium mb-2">Recursos disponíveis</h4>
                   <div className="grid grid-cols-1 gap-2">
                     {sala.recursos.map((recurso, index) => (
                       <div key={index} className="flex items-center space-x-2">
@@ -197,7 +197,7 @@ export default function SalasPage() {
                   ) : (
                     <>
                       <AlertTriangle className="h-4 w-4 mr-2" />
-                      Indisponível
+                      InDisponível
                     </>
                   )}
                 </Button>
@@ -226,7 +226,7 @@ export default function SalasPage() {
                 <CheckCircle className="h-4 w-4 text-green-500 mt-0.5" />
                 <div>
                   <p className="font-medium">Cancelamento</p>
-                  <p className="text-sm text-gray-600">Cancelamento gratuito até 2 horas antes do horário</p>
+                  <p className="text-sm text-gray-600">Cancelamento gratuito até 2 horas antes do Horário</p>
                 </div>
               </div>
 
@@ -234,7 +234,7 @@ export default function SalasPage() {
                 <Users className="h-4 w-4 text-purple-500 mt-0.5" />
                 <div>
                   <p className="font-medium">Tolerância</p>
-                  <p className="text-sm text-gray-600">15 minutos de tolerância para atraso</p>
+                  <p className="text-sm text-gray-600">15 minutos de Tolerância para atraso</p>
                 </div>
               </div>
 
@@ -292,3 +292,8 @@ export default function SalasPage() {
     </div>
   )
 }
+
+
+
+
+

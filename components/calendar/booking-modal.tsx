@@ -1,8 +1,7 @@
 "use client"
 
 import type React from "react"
-
-import { useState, useEffect } from "react"
+import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -16,7 +15,6 @@ import { Calendar, Users, Wifi, Monitor, Coffee, AlertCircle, CheckCircle } from
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import type { Sala } from "@/lib/data"
-// Sem dependência de dados mockados; cálculo e verificação via props/API
 
 export interface BookingData {
   salaId: string
@@ -61,74 +59,27 @@ export function BookingModal({
 
   useEffect(() => {
     if (isOpen) {
-      // Reset form when modal opens
       setSelectedSala("")
       setSelectedCliente("")
       setHoraInicio("")
       setHoraFim("")
       setObservacoes("")
+      setAudiencia(false)
       setError("")
     }
   }, [isOpen])
 
-  // Para admin, pré-seleciona o primeiro cliente para evitar bloqueio
   useEffect(() => {
-    if (isOpen && isAdmin && !selectedCliente && clientes && clientes.length > 0) {
+    if (isOpen && isAdmin && !selectedCliente && clientes.length > 0) {
       setSelectedCliente(clientes[0].id)
     }
   }, [isOpen, isAdmin, clientes, selectedCliente])
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError("")
-    setLoading(true)
-
-    try {
-      if (!selectedSala || !horaInicio || !horaFim) {
-        setError("Por favor, preencha todos os campos obrigatórios")
-        return
-      }
-
-      if (isAdmin && !selectedCliente) {
-        setError("Por favor, selecione um cliente")
-        return
-      }
-
-      const dataStr = format(selectedDate ?? new Date(), "yyyy-MM-dd")
-      // Validar horários
-      const inicio = new Date(`2024-01-01T${horaInicio}`)
-      const fim = new Date(`2024-01-01T${horaFim}`)
-
-      if (fim <= inicio) {
-        setError("O horário de fim deve ser posterior ao horário de início")
-        return
-      }
-
-      const bookingData: BookingData = {
-        salaId: selectedSala,
-        data: dataStr,
-        horaInicio,
-        horaFim,
-        observacoes: observacoes || undefined,
-        clienteId: isAdmin ? selectedCliente : undefined,
-        audiencia,
-      }
-
-      onConfirm(bookingData)
-      onClose()
-    } catch (err) {
-      setError("Erro ao criar reserva. Tente novamente.")
-    } finally {
-      setLoading(false)
-    }
-  }
 
   const selectedSalaData = salas.find((s) => s.id === selectedSala)
 
   const getSalaImage = (s: Sala | undefined) => {
     if (!s) return "/placeholder.svg"
     const map: Record<string, string> = {
-      // Mapeamento organizado por sala (A, B, C, D)
       "sala-1": "/salas/sala-a.jpeg",
       "sala-2": "/salas/sala-b.jpeg",
       "sala-3": "/salas/sala-c.jpeg",
@@ -136,12 +87,11 @@ export function BookingModal({
     }
     return map[s.id] || s.imagem || "/placeholder.svg"
   }
-
   const getSalaLetter = (id?: string) => {
-    if (!id) return ""
-    const map: Record<string, string> = { 'sala-1':'A', 'sala-2':'B', 'sala-3':'C', 'sala-4':'D' }
-    return map[id] || ""
+    const map: Record<string, string> = { 'sala-1': 'A', 'sala-2': 'B', 'sala-3': 'C', 'sala-4': 'D' }
+    return id ? (map[id] || id) : ""
   }
+
   const valorEstimado = (() => {
     if (!selectedSalaData || !horaInicio || !horaFim) return 0
     const inicio = new Date(`2024-01-01T${horaInicio}`)
@@ -166,6 +116,41 @@ export function BookingModal({
     }
   }
 
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError("")
+    setLoading(true)
+    try {
+      if (!selectedSala || !horaInicio || !horaFim) {
+        setError("Por favor, preencha todos os campos obrigatórios")
+        return
+      }
+      if (isAdmin && !selectedCliente) {
+        setError("Por favor, selecione um cliente")
+        return
+      }
+      const dataStr = format(selectedDate ?? new Date(), "yyyy-MM-dd", { locale: ptBR })
+      onConfirm({
+        salaId: selectedSala,
+        data: dataStr,
+        horaInicio,
+        horaFim,
+        observacoes: observacoes || undefined,
+        clienteId: isAdmin ? selectedCliente : undefined,
+        audiencia,
+      })
+      onClose()
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const horarios = [
+    "08:00","08:30","09:00","09:30","10:00","10:30","11:00","11:30",
+    "12:00","12:30","13:00","13:30","14:00","14:30","15:00","15:30",
+    "16:00","16:30","17:00","17:30","18:00","18:30",
+  ]
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl bg-white border-gray-200">
@@ -182,18 +167,14 @@ export function BookingModal({
             <form onSubmit={handleSubmit} className="space-y-4">
               {isAdmin && (
                 <div className="space-y-2">
-                  <Label htmlFor="cliente" className="text-black">
-                    Cliente *
-                  </Label>
+                  <Label className="text-black">Cliente *</Label>
                   <Select value={selectedCliente} onValueChange={setSelectedCliente}>
-                    <SelectTrigger className="border-gray-300 focus:border-orange-500">
+                    <SelectTrigger className="border-gray-300">
                       <SelectValue placeholder="Selecione um cliente" />
                     </SelectTrigger>
-                    <SelectContent className="bg-white border-gray-200">
-                      {clientes.map((cliente) => (
-                        <SelectItem key={cliente.id} value={cliente.id}>
-                          {cliente.nome} - {cliente.plano}
-                        </SelectItem>
+                    <SelectContent>
+                      {clientes.map((c) => (
+                        <SelectItem key={c.id} value={c.id}>{c.nome} - {c.plano}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -201,23 +182,16 @@ export function BookingModal({
               )}
 
               <div className="space-y-2">
-                <Label htmlFor="sala" className="text-black">
-                  Sala *
-                </Label>
+                <Label className="text-black">Sala *</Label>
                 <Select value={selectedSala} onValueChange={setSelectedSala}>
-                  <SelectTrigger className="border-gray-300 focus:border-orange-500">
+                  <SelectTrigger className="border-gray-300">
                     <SelectValue placeholder="Selecione uma sala" />
                   </SelectTrigger>
-                  <SelectContent className="bg-white border-gray-200">
-                    {salas.map((sala) => {
+                  <SelectContent>
+                    {salas.map((s) => {
                       const map: Record<string,string> = { 'sala-1':'A', 'sala-2':'B', 'sala-3':'C', 'sala-4':'D' }
-                      const letter = map[sala.id] || ''
-                      const label = letter ? `Sala ${letter}` : sala.nome || 'Sala'
-                      return (
-                        <SelectItem key={sala.id} value={sala.id}>
-                          {label}
-                        </SelectItem>
-                      )
+                      const label = map[s.id] ? `Sala ${map[s.id]}` : s.nome
+                      return <SelectItem key={s.id} value={s.id}>{label}</SelectItem>
                     })}
                   </SelectContent>
                 </Select>
@@ -225,45 +199,28 @@ export function BookingModal({
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="horaInicio" className="text-black">
-                    Hora Início *
-                  </Label>
-                  <Input
-                    id="horaInicio"
-                    type="time"
-                    value={horaInicio}
-                    onChange={(e) => setHoraInicio(e.target.value)}
-                    className="border-gray-300 focus:border-orange-500"
-                    required
-                  />
+                  <Label className="text-black">Hora Início *</Label>
+                  <Select value={horaInicio} onValueChange={setHoraInicio}>
+                    <SelectTrigger className="border-gray-300"><SelectValue placeholder="Início"/></SelectTrigger>
+                    <SelectContent>
+                      {horarios.map((h)=> (<SelectItem key={h} value={h}>{h}</SelectItem>))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="horaFim" className="text-black">
-                    Hora Fim *
-                  </Label>
-                  <Input
-                    id="horaFim"
-                    type="time"
-                    value={horaFim}
-                    onChange={(e) => setHoraFim(e.target.value)}
-                    className="border-gray-300 focus:border-orange-500"
-                    required
-                  />
+                  <Label className="text-black">Hora Fim *</Label>
+                  <Select value={horaFim} onValueChange={setHoraFim}>
+                    <SelectTrigger className="border-gray-300"><SelectValue placeholder="Fim"/></SelectTrigger>
+                    <SelectContent>
+                      {horarios.map((h)=> (<SelectItem key={h} value={h}>{h}</SelectItem>))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="observacoes" className="text-black">
-                  Observações
-                </Label>
-                <Textarea
-                  id="observacoes"
-                  placeholder="Informações adicionais sobre a reserva..."
-                  value={observacoes}
-                  onChange={(e) => setObservacoes(e.target.value)}
-                  className="border-gray-300 focus:border-orange-500"
-                  rows={3}
-                />
+                <Label className="text-black">Observações</Label>
+                <Textarea value={observacoes} onChange={(e)=>setObservacoes(e.target.value)} rows={3} className="border-gray-300" />
               </div>
 
               <div className="flex items-center gap-2">
@@ -278,25 +235,10 @@ export function BookingModal({
                 </Alert>
               )}
 
-              <div className="flex justify-end space-x-3 pt-4">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={onClose}
-                  disabled={loading}
-                  className="border-gray-300 text-gray-700 hover:bg-gray-50 bg-transparent"
-                >
-                  Cancelar
-                </Button>
+              <div className="flex justify-end gap-3">
+                <Button type="button" variant="outline" onClick={onClose} disabled={loading}>Cancelar</Button>
                 <Button type="submit" disabled={loading} className="bg-orange-500 hover:bg-orange-600 text-white">
-                  {loading ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
-                      Criando...
-                    </>
-                  ) : (
-                    "Confirmar Reserva"
-                  )}
+                  {loading ? "Criando..." : "Confirmar Reserva"}
                 </Button>
               </div>
             </form>
@@ -307,41 +249,24 @@ export function BookingModal({
             {selectedSalaData ? (
               <Card className="border-gray-200">
                 <CardHeader>
-                  <CardTitle className="text-black">{selectedSalaData.nome}</CardTitle>
-                  <CardDescription className="text-gray-600">{selectedSalaData.descricao}</CardDescription>
+                  <CardTitle className="text-black">Sala {getSalaLetter(selectedSalaData.id)}</CardTitle>
+                  <CardDescription className="text-gray-600">Sala com infraestrutura completa para reuniões.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="aspect-video bg-gray-100 rounded-lg flex items-center justify-center border border-gray-200">
-                    <img
-                      src={getSalaImage(selectedSalaData)}
-                      alt={selectedSalaData.nome}
-                      className="w-full h-full object-cover rounded-lg"
-                    />
+                    <img src={getSalaImage(selectedSalaData)} alt={selectedSalaData.nome} className="w-full h-full object-cover rounded-lg" />
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
-                    <div className="flex items-center space-x-2">
-                      <Users className="h-4 w-4 text-orange-500" />
-                      <span className="text-sm text-gray-600">Até {selectedSalaData.capacidade} pessoas</span>
+                    <div className="flex items-center space-x-2"><Users className="h-4 w-4 text-orange-500" />
+                      <span className="text-sm text-gray-600">Recomendado: 4 pessoas</span>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <Calendar className="h-4 w-4 text-orange-500" />
-                      <span className="text-sm text-gray-600">{selectedSalaData.area}m²</span>
+                    <div className="flex items-center space-x-2"><Users className="h-4 w-4 text-orange-500" />
+                      <span className="text-sm text-gray-600">Máximo: 6 pessoas</span>
                     </div>
                   </div>
 
-                  <div>
-                    <h4 className="font-medium text-black mb-2">Recursos Inclusos</h4>
-                    <div className="flex flex-wrap gap-2">
-                      {selectedSalaData.recursos.map((resource, index) => (
-                        <Badge key={index} variant="outline" className="border-orange-200 text-orange-700 bg-orange-50">
-                          <span className="mr-1">{getResourceIcon(resource)}</span>
-                          {resource}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-
+                  {/* Descrição da Sala */}
                   <div className="bg-gray-50 border border-gray-200 p-4 rounded-lg">
                     <h4 className="font-medium text-black mb-2">Descrição da Sala</h4>
                     <p className="text-sm text-gray-700 mb-2">Sala {getSalaLetter(selectedSalaData.id)} — infraestrutura padronizada:</p>
@@ -380,54 +305,10 @@ export function BookingModal({
                 </CardContent>
               </Card>
             )}
-
-            {/* Resumo da Reserva */}
-            {selectedDate && selectedSala && horaInicio && horaFim && (
-              <Card className="border-gray-200">
-                <CardHeader>
-                  <CardTitle className="text-black">Resumo da Reserva</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Data:</span>
-                    <span className="font-medium text-black">
-                      {format(selectedDate, "d 'de' MMM 'de' yyyy", { locale: ptBR })}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Horário:</span>
-                    <span className="font-medium text-black">
-                      {horaInicio} - {horaFim}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Duração:</span>
-                    <span className="font-medium text-black">
-                      {(() => {
-                        const inicio = new Date(`2024-01-01T${horaInicio}`)
-                        const fim = new Date(`2024-01-01T${horaFim}`)
-                        const horas = (fim.getTime() - inicio.getTime()) / (1000 * 60 * 60)
-                        return `${horas}h`
-                      })()}
-                    </span>
-                  </div>
-                  {selectedSalaData && (
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Sala:</span>
-                      <span className="font-medium text-black">{selectedSalaData.nome}</span>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            )}
           </div>
         </div>
       </DialogContent>
     </Dialog>
   )
 }
-
-
-
-
 

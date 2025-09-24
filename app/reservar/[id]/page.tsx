@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import type React from "react"
 
@@ -66,7 +66,7 @@ export default function ReservarSalaPage() {
   const [success, setSuccess] = useState("")
   const [sala, setSala] = useState<Sala | null>(null)
 
-  // Dados do formulário
+  // Dados do formulÃ¡rio
   const [formData, setFormData] = useState({
     data: "",
     horaInicio: "",
@@ -77,7 +77,7 @@ export default function ReservarSalaPage() {
   // sala carregada via API
 
   useEffect(() => {
-    // Verificar se usuário está logado
+    // Verificar se usuÃ¡rio estÃ¡ logado
     const userData = localStorage.getItem("user")
     if (!userData) {
       router.push("/login")
@@ -87,7 +87,7 @@ export default function ReservarSalaPage() {
     const parsedUser = JSON.parse(userData)
     setUser(parsedUser)
 
-    // Verificar se tem acesso às salas
+    // Verificar se tem acesso Ã s salas
     if (parsedUser.plano !== "mensalista") {
       router.push("/dashboard")
       return
@@ -105,7 +105,7 @@ export default function ReservarSalaPage() {
       })
       .finally(() => setLoading(false))
 
-    // Definir data mínima como hoje
+    // Definir data mÃ­nima como hoje
     const hoje = format(new Date(), "yyyy-MM-dd")
     setFormData((prev) => ({ ...prev, data: hoje }))
 
@@ -130,7 +130,7 @@ export default function ReservarSalaPage() {
     return total
   })()
 
-  // Horários disponíveis para fim baseado no início
+  // HorÃ¡rios disponÃ­veis para fim baseado no inÃ­cio
   const horariosDisponiveis = horarios.filter((h) => {
     if (!formData.horaInicio) return true
     return h > formData.horaInicio
@@ -143,39 +143,39 @@ export default function ReservarSalaPage() {
     setSuccess("")
 
     try {
-      // Validações
+      // ValidaÃ§Ãµes
       if (!formData.data || !formData.horaInicio || !formData.horaFim) {
-        setError("Todos os campos obrigatórios devem ser preenchidos")
+        setError("Todos os campos obrigatÃ³rios devem ser preenchidos")
         return
       }
 
       if (formData.horaInicio >= formData.horaFim) {
-        setError("Horário de fim deve ser posterior ao horário de início")
+        setError("HorÃ¡rio de fim deve ser posterior ao horÃ¡rio de inÃ­cio")
         return
       }
 
-      // Verificar se a data não é no passado
+      // Verificar se a data nÃ£o Ã© no passado
       const dataReserva = new Date(formData.data)
       const hoje = new Date()
       hoje.setHours(0, 0, 0, 0)
 
       if (dataReserva < hoje) {
-        setError("Não é possível reservar para datas passadas")
+        setError("NÃ£o Ã© possÃ­vel reservar para datas passadas")
         return
       }
 
       // Verificar conflitos
       if (verificarConflito(salaId, formData.data, formData.horaInicio, formData.horaFim)) {
-        setError("Já existe uma reserva para este horário. Escolha outro horário.")
+        setError("JÃ¡ existe uma reserva para este horÃ¡rio. Escolha outro horÃ¡rio.")
         return
       }
 
-      // Simular criação da reserva
+      // Simular criaÃ§Ã£o da reserva
       await new Promise((resolve) => setTimeout(resolve, 2000))
 
-      setSuccess("Reserva criada com sucesso! Você será redirecionado para o calendário.")
+      setSuccess("Reserva criada com sucesso! VocÃª serÃ¡ redirecionado para o calendÃ¡rio.")
 
-      // Redirecionar após 3 segundos
+      // Redirecionar apÃ³s 3 segundos
       setTimeout(() => {
         router.push("/calendar")
       }, 3000)
@@ -207,7 +207,7 @@ export default function ReservarSalaPage() {
             <div className="flex items-center space-x-4">
               <Button variant="ghost" size="sm" onClick={() => router.push("/salas")}>
                 <ArrowLeft className="h-4 w-4 mr-2" />
-                Voltar às Salas
+                Voltar Ã s Salas
               </Button>
               <div className="flex items-center space-x-3">
                 <Building2 className="h-8 w-8 text-blue-600" />
@@ -225,7 +225,7 @@ export default function ReservarSalaPage() {
 
       <div className="container mx-auto px-4 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Formulário de Reserva */}
+          {/* FormulÃ¡rio de Reserva */}
           <div>
             {/* Mensagens */}
             {success && (
@@ -248,7 +248,7 @@ export default function ReservarSalaPage() {
                   <Calendar className="h-5 w-5 mr-2" />
                   Dados da Reserva
                 </CardTitle>
-                <CardDescription>Preencha as informações para sua reserva</CardDescription>
+                <CardDescription>Preencha as informaÃ§Ãµes para sua reserva</CardDescription>
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleSubmit} className="space-y-6">
@@ -264,12 +264,12 @@ export default function ReservarSalaPage() {
                       required
                       disabled={submitting}
                     />
-                    <p className="text-xs text-gray-500">Reservas podem ser feitas com até 30 dias de antecedência</p>
+                    <p className="text-xs text-gray-500">Reservas podem ser feitas com atÃ© 30 dias de antecedÃªncia</p>
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="horaInicio">Horário de Início *</Label>
+                      <Label htmlFor="horaInicio">HorÃ¡rio de InÃ­cio *</Label>
                       <Select
                         value={formData.horaInicio}
                         onValueChange={(value) => handleInputChange("horaInicio", value)}
@@ -277,7 +277,7 @@ export default function ReservarSalaPage() {
                         disabled={submitting}
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder="Início" />
+                          <SelectValue placeholder="InÃ­cio" />
                         </SelectTrigger>
                         <SelectContent>
                           {horarios.map((horario) => (
@@ -290,7 +290,7 @@ export default function ReservarSalaPage() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="horaFim">Horário de Fim *</Label>
+                      <Label htmlFor="horaFim">HorÃ¡rio de Fim *</Label>
                       <Select
                         value={formData.horaFim}
                         onValueChange={(value) => handleInputChange("horaFim", value)}
@@ -312,10 +312,10 @@ export default function ReservarSalaPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="observacoes">Observações</Label>
+                    <Label htmlFor="observacoes">ObservaÃ§Ãµes</Label>
                     <Textarea
                       id="observacoes"
-                      placeholder="Informações adicionais sobre a reunião..."
+                      placeholder="InformaÃ§Ãµes adicionais sobre a reuniÃ£o..."
                       value={formData.observacoes}
                       onChange={(e) => handleInputChange("observacoes", e.target.value)}
                       rows={4}
@@ -382,78 +382,16 @@ export default function ReservarSalaPage() {
                   />
                 </div>
 
-                {/* Informações básicas */}
+                {/* InformaÃ§Ãµes bÃ¡sicas */}
                 <div className="grid grid-cols-2 gap-4">
                   <div className="flex items-center space-x-2">
                     <Users className="h-4 w-4 text-gray-500" />
-                    <span className="text-sm">Até {sala.capacidade} pessoas</span>
+                    <span className="text-sm">Recomendado: 4 pessoas</span>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <DollarSign className="h-4 w-4 text-gray-500" />
-                    <div className="text-sm">
-                      <span className="line-through text-gray-400">R$ {sala.valorHora}</span>
-                      <span className="ml-2 font-medium text-green-600">
-                        R$ {(sala.valorHora * 0.8).toFixed(2)}/hora
-                      </span>
-                    </div>
+                    <Users className="h-4 w-4 text-gray-500" />
+                    <span className="text-sm">Máximo: 6 pessoas</span>
                   </div>
                 </div>
-
-                {/* Recursos disponíveis */}
-                <div>
-                  <h4 className="font-medium mb-2">Recursos Disponíveis</h4>
-                  <div className="grid grid-cols-1 gap-2">
-                    {sala.recursos.map((recurso, index) => (
-                      <div key={index} className="flex items-center space-x-2">
-                        <CheckCircle className="h-4 w-4 text-green-500" />
-                        <span className="text-sm">{recurso}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Status */}
-                <div className="flex items-center space-x-2">
-                  <Badge variant={sala.disponivel ? "default" : "destructive"}>
-                    {sala.disponivel ? "Disponível" : "Indisponível"}
-                  </Badge>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Políticas */}
-            <Card className="bg-blue-50 border-blue-200">
-              <CardHeader>
-                <CardTitle className="text-sm text-blue-900">Políticas de Reserva</CardTitle>
-              </CardHeader>
-              <CardContent className="text-xs text-blue-800 space-y-2">
-                <div className="flex items-start space-x-2">
-                  <Clock className="h-3 w-3 mt-0.5" />
-                  <p>Reservas podem ser canceladas até 2 horas antes do horário</p>
-                </div>
-                <div className="flex items-start space-x-2">
-                  <Users className="h-3 w-3 mt-0.5" />
-                  <p>Tolerância de 15 minutos para atraso</p>
-                </div>
-                <div className="flex items-start space-x-2">
-                  <Building2 className="h-3 w-3 mt-0.5" />
-                  <p>Equipamentos devem ser utilizados com cuidado</p>
-                </div>
-                <div className="flex items-start space-x-2">
-                  <CheckCircle className="h-3 w-3 mt-0.5" />
-                  <p>Ambiente deve ser mantido limpo e organizado</p>
-                </div>
-                <div className="flex items-start space-x-2">
-                  <DollarSign className="h-3 w-3 mt-0.5" />
-                  <p>Mensalistas têm 20% de desconto em todas as reservas</p>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
 
 
