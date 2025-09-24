@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import dynamic from "next/dynamic"
+import NextDynamic from "next/dynamic"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -12,10 +12,14 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Label } from "@/components/ui/label"
 
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+export const fetchCache = 'force-no-store'
 
 import { CalendarIcon, Grid3X3, List, Eye, Plus, Building2, LogOut, Clock, CheckCircle, TrendingUp } from "lucide-react"
+
 // CalendarGrid sem SSR para evitar hidratação/fuso
-const CalendarGrid = dynamic(
+const CalendarGrid = NextDynamic(
   () => import("@/components/calendar/calendar-grid").then((m) => m.CalendarGrid),
   { ssr: false }
 )
@@ -101,19 +105,16 @@ export default function CalendarPage() {
     if (user?.plano === "mensalista") valorTotal *= 0.8
 
     // garantir 'YYYY-MM-DD' para a API (se for Date, montar manualmente)
-    // garantir 'YYYY-MM-DD' para a API (se for Date, montar manualmente)
-    // NÃO usar instanceof — o TS enxerga bookingData.data como string no seu tipo
     let dataYmd: string
     if (typeof bookingData.data === "string") {
       dataYmd = bookingData.data.slice(0, 10)
     } else {
-      const dt = new Date((bookingData as any).data) // força runtime-parse, sem brigar com o TS
+      const dt = new Date((bookingData as any).data)
       const y = dt.getFullYear()
       const m = String(dt.getMonth() + 1).padStart(2, "0")
       const d = String(dt.getDate()).padStart(2, "0")
       dataYmd = `${y}-${m}-${d}`
     }
-
 
     const resp = await fetch("/api/reservas", {
       method: "POST",
