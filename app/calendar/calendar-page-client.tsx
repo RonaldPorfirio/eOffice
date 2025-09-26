@@ -44,6 +44,7 @@ export default function CalendarPage() {
   const [showBookingModal, setShowBookingModal] = useState(false)
   const [showEventModal, setShowEventModal] = useState(false)
   const [message, setMessage] = useState("")
+  const clienteId = user?.clienteId ?? user?.id ?? null
 
   useEffect(() => {
     const userData = localStorage.getItem("user")
@@ -113,12 +114,18 @@ export default function CalendarPage() {
       dataYmd = `${y}-${m}-${d}`
     }
 
+    const targetClienteId = user?.clienteId ?? user?.id
+    if (!targetClienteId) {
+      setMessage("Conta sem cliente vinculado")
+      return
+    }
+
     const resp = await fetch("/api/reservas", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         id,
-        clienteId: user.id,
+        clienteId: targetClienteId,
         salaId: bookingData.salaId,
         data: dataYmd, // envia somente 'YYYY-MM-DD'
         horaInicio: bookingData.horaInicio,
@@ -141,7 +148,7 @@ export default function CalendarPage() {
         const titulo = 'Agendamento criado'
         const salaNome = salas.find(s => s.id === bookingData.salaId)?.nome || bookingData.salaId
         const msg = `Reserva em ${dataYmd} ${bookingData.horaInicio}-${bookingData.horaFim} | Sala ${salaNome}`
-        await fetch(`/api/clientes/${user.id}/avisos`, {
+        await fetch(`/api/clientes/${targetClienteId}/avisos`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ titulo, mensagem: msg, tipo: 'info', urgencia: 'baixa' })
@@ -171,13 +178,13 @@ export default function CalendarPage() {
 
   // Estatísticas somente do usuário logado
   const stats = {
-    total: reservas.filter((r) => r.clienteId === user.id).length,
-    confirmadas: reservas.filter((r) => r.clienteId === user.id && r.status === "confirmada").length,
-    pendentes: reservas.filter((r) => r.clienteId === user.id && r.status === "pendente").length,
+    total: reservas.filter((r) => clienteId && r.clienteId === clienteId).length,
+    confirmadas: reservas.filter((r) => clienteId && r.clienteId === clienteId && r.status === "confirmada").length,
+    pendentes: reservas.filter((r) => clienteId && r.clienteId === clienteId && r.status === "pendente").length,
     esteMes: reservas.filter((r) => {
       const reservaDate = parseLocalYmd((r as any).data as string)
       const now = new Date()
-      return r.clienteId === user.id && reservaDate.getMonth() === now.getMonth() && reservaDate.getFullYear() === now.getFullYear()
+      return clienteId && r.clienteId === clienteId && reservaDate.getMonth() === now.getMonth() && reservaDate.getFullYear() === now.getFullYear()
     }).length,
   }
 
@@ -481,7 +488,7 @@ export default function CalendarPage() {
                 </div>
 
                 {/* Só permite edição/cancelamento para admin ou criador */}
-                {selectedReserva.status === "pendente" && (user.isAdmin || selectedReserva.clienteId === user.id) && (
+                {selectedReserva.status === "pendente" && (user.isAdmin || clienteId && selectedReserva.clienteId === clienteId) && (
                   <Button variant="outline" size="sm">
                     Cancelar Reserva
                   </Button>

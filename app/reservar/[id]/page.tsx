@@ -106,9 +106,15 @@ export default function ReservarSalaPage() {
         return
       }
 
+      const currentClienteId = user?.clienteId ?? user?.id
+      if (!currentClienteId) {
+        setError("Conta sem cliente vinculado")
+        return
+      }
+
       const reserva = {
         id: `res-${Date.now()}`,
-        clienteId: user.id,
+        clienteId: currentClienteId,
         salaId,
         data: formData.data,
         horaInicio: formData.horaInicio,
@@ -132,7 +138,7 @@ export default function ReservarSalaPage() {
         try {
           const titulo = "Nova reserva criada"
           const mensagem = `Reserva em ${formData.data} ${formData.horaInicio}-${formData.horaFim} | Sala ${sala?.nome}`
-          await fetch(`/api/clientes/${user.id}/avisos`, {
+          await fetch(`/api/clientes/${currentClienteId}/avisos`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ titulo, mensagem, tipo: "info", urgencia: "baixa" })

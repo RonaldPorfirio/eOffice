@@ -52,6 +52,7 @@ export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState("correspondencias")
   const [clearing, setClearing] = useState(false)
   const [confirmClearOpen, setConfirmClearOpen] = useState(false)
+  const clienteId = user?.clienteId ?? user?.id ?? null
   useEffect(() => {
     // Verificar se usuário está logado
     const userData = localStorage.getItem("user")
@@ -68,13 +69,20 @@ export default function DashboardPage() {
 
     setUser(parsedUser)
 
+    const targetClienteId = parsedUser.clienteId ?? parsedUser.id
+    if (!targetClienteId) {
+      console.error("[v0] Cliente sem identificador associado")
+      setLoading(false)
+      return
+    }
+
     console.log("[v0] Carregando dados para usuário:", parsedUser)
 
     Promise.all([
-      fetch(`/api/clientes/${parsedUser.id}/reservas`).then((r) => r.json()),
-      fetch(`/api/clientes/${parsedUser.id}/correspondencias`).then((r) => r.json()),
-      fetch(`/api/clientes/${parsedUser.id}/audiencias`).then((r) => r.json()),
-      fetch(`/api/clientes/${parsedUser.id}/avisos`).then((r) => r.json()),
+      fetch(`/api/clientes/${targetClienteId}/reservas`).then((r) => r.json()),
+      fetch(`/api/clientes/${targetClienteId}/correspondencias`).then((r) => r.json()),
+      fetch(`/api/clientes/${targetClienteId}/audiencias`).then((r) => r.json()),
+      fetch(`/api/clientes/${targetClienteId}/avisos`).then((r) => r.json()),
       fetch(`/api/salas`).then((r) => r.json()),
       fetch(`/api/clientes`).then((r) => r.json()),
     ])
@@ -92,7 +100,7 @@ export default function DashboardPage() {
         setDAudiencias(aud || [])
         setDAvisos(avs || [])
         setDSalas(salas || [])
-        setDCliente((clientes || []).find((c: any) => c.id === parsedUser.id) || null)
+        setDCliente((clientes || []).find((c: any) => c.id === targetClienteId) || null)
       })
       .catch((error) => {
         console.error("[v0] Erro ao carregar dados:", error)
@@ -103,9 +111,11 @@ export default function DashboardPage() {
   // Atualiza avisos periodicamente para refletir novas correspondências criadas no admin
   useEffect(() => {
     if (!user) return
+    const targetId = user.clienteId ?? user.id
+    if (!targetId) return
     let stopped = false
     const load = () => {
-      fetch(`/api/clientes/${user.id}/avisos`)
+      fetch(`/api/clientes/${targetId}/avisos`)
         .then((r) => r.json())
         .then((avs) => {
           console.log("[v0] Avisos atualizados:", avs?.length || 0)
@@ -131,9 +141,11 @@ export default function DashboardPage() {
 
   const handleClearAvisos = async () => {
     if (!user) return
+    const targetId = user.clienteId ?? user.id
+    if (!targetId) return
     setClearing(true)
     try {
-      const r = await fetch(`/api/clientes/${user.id}/avisos`, { method: "DELETE" })
+      const r = await fetch(`/api/clientes/${targetId}/avisos`, { method: "DELETE" })
       if (r.ok) {
         setDAvisos([])
       }
@@ -154,7 +166,7 @@ export default function DashboardPage() {
     return null
   }
 
-  const cliente = dCliente || { id: user.id, nome: user.nome, plano: user.plano }
+  const cliente = dCliente || { id: clienteId ?? user.id, nome: user.nome, plano: user.plano }
   const reservas = dReservas
   const correspondencias = dCorrespondencias
   const audiencias = dAudiencias
