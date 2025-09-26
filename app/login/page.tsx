@@ -42,8 +42,18 @@ export default function LoginPage() {
     setLoading(true)
     try {
       const result = await apiLogin(email, senha)
-      localStorage.setItem("user", JSON.stringify(result.user))
-      router.push(result.redirect)
+      const user = result?.user ?? result
+      if (!user || typeof user !== "object") {
+        throw new Error("Resposta invalida do servidor")
+      }
+      localStorage.setItem("user", JSON.stringify(user))
+      const redirectPath =
+        typeof result?.redirect === "string"
+          ? result.redirect
+          : user.tipo === "admin"
+            ? "/admin"
+            : "/dashboard"
+      router.push(redirectPath)
     } catch (err: any) {
       setError(err?.message || "Erro interno do sistema")
     } finally {
@@ -234,3 +244,4 @@ export default function LoginPage() {
     </div>
   )
 }
+
