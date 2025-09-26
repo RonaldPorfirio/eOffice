@@ -11,6 +11,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Building2, Mail, Lock, AlertCircle, Eye, EyeOff, Phone, MapPin } from "lucide-react"
 import Image from "next/image"
+import logo from "@/public/logotipo/logo-eoffice.png"
 
 // Dados de demonstração (apenas para preencher rapidamente o formulário)
 // Demo accounts removidas
@@ -61,20 +62,21 @@ export default function LoginPage() {
     }
   }
   // Mantido stub para compatibilidade com JSX legado (conteúdo demo oculto)
-  const handleDemoLogin = (..._args: any[]) => {}
+  const handleDemoLogin = (..._args: any[]) => { }
 
   return (
     <div className="min-h-screen bg-white">
       <header className="bg-white shadow-sm border-b border-gray-200">
         <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-center">
-            <div className="flex items-center space-x-3">
-              <Image src="/logo-eoffice.png" alt="eOffice 1321" width={40} height={40} className="rounded-lg" />
-              <div>
-                <h1 className="text-xl font-bold text-black">eOffice 1321</h1>
-                <p className="text-sm text-gray-600">Sistema de Gestão</p>
-              </div>
-            </div>
+          <div className="flex items-center justify-center py-2">
+            <Image
+              src={logo}
+              alt="Logo eOffice"
+              width={320}   // ajusta aqui
+              height={320}  // ajusta proporcional
+              priority
+            />
+
           </div>
         </div>
       </header>
