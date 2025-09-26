@@ -112,7 +112,7 @@ export default function AdminPage(): JSX.Element {
       setMessage("Reserva criada e confirmada com sucesso!")
 
       try {
-        // Aviso padr├úo de agendamento
+        // Aviso padrão de agendamento
         const cliId = data.clienteId || clientes[0]?.id
         const cli = clientes.find((c:any)=>c.id === cliId)
         if (cli) {
@@ -124,9 +124,9 @@ export default function AdminPage(): JSX.Element {
         if (data.audiencia) {
           const cli = clientes.find((c:any)=>c.id === (data.clienteId || clientes[0]?.id))
           if (cli && cli.plano === 'mensalista') {
-            const titulo = 'Audi├¬ncia agendada'
+            const titulo = 'Audiência agendada'
             const salaNome = salas.find(s=>s.id===data.salaId)?.nome || data.salaId
-            const mensagem = `Audi├¬ncia em ${novaNorm.data} ${data.horaInicio}-${data.horaFim} | Sala ${salaNome} | Usu├írio: ${cli.nome}`
+            const mensagem = `Audiência em ${novaNorm.data} ${data.horaInicio}-${data.horaFim} | Sala ${salaNome} | Usuário: ${cli.nome}`
             await fetch(`/api/clientes/${cli.id}/avisos`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ titulo, mensagem, tipo:'info', urgencia:'media' }) })
           }
         }
@@ -428,15 +428,15 @@ export default function AdminPage(): JSX.Element {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Detalhes da Reserva</AlertDialogTitle>
-            <AlertDialogDescription>Informa├º├Áes da reserva selecionada.</AlertDialogDescription>
+            <AlertDialogDescription>Informações da reserva selecionada.</AlertDialogDescription>
           </AlertDialogHeader>
           {selectedReserva && (
             <div className="space-y-2 text-sm">
               <div><span className="font-medium">Cliente:</span> {clientes.find((c:any)=>c.id===selectedReserva.clienteId)?.nome || selectedReserva.clienteId}</div>
               <div><span className="font-medium">Sala:</span> {salas.find((s)=>s.id===selectedReserva.salaId)?.nome || selectedReserva.salaId}</div>
               <div><span className="font-medium">Dia:</span> {selectedReserva.data}</div>
-              <div><span className="font-medium">Hor├írio:</span> {selectedReserva.horaInicio} - {selectedReserva.horaFim}</div>
-              {selectedReserva.observacoes && (<div><span className="font-medium">Observa├º├Áes:</span> {selectedReserva.observacoes}</div>)}
+              <div><span className="font-medium">Horário:</span> {selectedReserva.horaInicio} - {selectedReserva.horaFim}</div>
+              {selectedReserva.observacoes && (<div><span className="font-medium">Observações:</span> {selectedReserva.observacoes}</div>)}
             </div>
           )}
           <AlertDialogFooter>
@@ -452,19 +452,19 @@ export default function AdminPage(): JSX.Element {
         onChanged={()=>{ setMessage('Senha atualizada'); setTimeout(()=>setMessage(''),3000) }}
       />
 
-      {/* Confirmar exclus├úo de correspond├¬ncia */}
+      {/* Confirmar exclusão de correspondência */}
       <AlertDialog open={confirmDeleteCorrOpen} onOpenChange={setConfirmDeleteCorrOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Excluir correspond├¬ncia</AlertDialogTitle>
-            <AlertDialogDescription>Esta a├º├úo n├úo pode ser desfeita.</AlertDialogDescription>
+            <AlertDialogTitle>Excluir correspondência</AlertDialogTitle>
+            <AlertDialogDescription>Esta ação não pode ser desfeita.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction onClick={async()=>{
               if (!toDeleteCorrId) return
               const r = await fetch(`/api/correspondencias/${toDeleteCorrId}`, { method:'DELETE' })
-              if (r.ok) { setCorrespondencias((p)=>p.filter((x:any)=>x.id!==toDeleteCorrId)); setMessage('Correspond├¬ncia exclu├¡da') } else { const e = await r.json().catch(()=>({})); setMessage(e.error||'Falha ao excluir correspond├¬ncia') }
+              if (r.ok) { setCorrespondencias((p)=>p.filter((x:any)=>x.id!==toDeleteCorrId)); setMessage('Correspondência excluída') } else { const e = await r.json().catch(()=>({})); setMessage(e.error||'Falha ao excluir correspondência') }
               setTimeout(()=>setMessage(''),3000)
               setToDeleteCorrId(null)
             }}>Excluir</AlertDialogAction>
@@ -472,7 +472,7 @@ export default function AdminPage(): JSX.Element {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Confirmar exclus├úo de reserva */}
+      {/* Confirmar exclusão de reserva */}
       <AlertDialog open={confirmDeleteReservaOpen} onOpenChange={setConfirmDeleteReservaOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -484,7 +484,7 @@ export default function AdminPage(): JSX.Element {
             <AlertDialogAction onClick={async()=>{
               if (!toDeleteReservaId) return
               const r = await fetch(`/api/reservas/${toDeleteReservaId}`, { method:'DELETE' })
-              if (r.ok) { setReservas((p)=>p.filter((x:any)=>x.id!==toDeleteReservaId)); setMessage('Reserva exclu├¡da') } else { const e = await r.json().catch(()=>({})); setMessage(e.error||'Falha ao excluir reserva') }
+              if (r.ok) { setReservas((p)=>p.filter((x:any)=>x.id!==toDeleteReservaId)); setMessage('Reserva excluída') } else { const e = await r.json().catch(()=>({})); setMessage(e.error||'Falha ao excluir reserva') }
               setTimeout(()=>setMessage(''),3000)
               setToDeleteReservaId(null)
             }}>Excluir</AlertDialogAction>
@@ -497,7 +497,7 @@ export default function AdminPage(): JSX.Element {
           <AlertDialogHeader>
             <AlertDialogTitle>Excluir cliente</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta a├º├úo n├úo pode ser desfeita. Tem certeza que deseja excluir este cliente?
+              Esta ação não pode ser desfeita. Tem certeza que deseja excluir este cliente?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -508,7 +508,7 @@ export default function AdminPage(): JSX.Element {
                 const r = await fetch(`/api/clientes/${toDeleteId}`, { method:'DELETE' })
                 if (r.ok) {
                   setClientes((p)=>p.filter((x)=>x.id!==toDeleteId))
-                  setMessage('Cliente exclu├¡do')
+                  setMessage('Cliente excluído')
                 } else {
                   const e = await r.json().catch(()=>({}))
                   setMessage(e.error||'Falha ao excluir')
@@ -528,13 +528,11 @@ export default function AdminPage(): JSX.Element {
         onClose={()=>{ setShowEditCorr(false); setEditCorr(null) }}
         correspondencia={editCorr}
         clientes={clientes.map((c)=>({ id: c.id, nome: c.nome, email: c.email }))}
-        onSaved={(u)=>{ setCorrespondencias((p)=>p.map((x:any)=>x.id===u.id?u:x)); setMessage('Correspond├¬ncia atualizada'); setTimeout(()=>setMessage(''),3000) }}
+        onSaved={(u)=>{ setCorrespondencias((p)=>p.map((x:any)=>x.id===u.id?u:x)); setMessage('Correspondência atualizada'); setTimeout(()=>setMessage(''),3000) }}
       />
     </div>
   )
 
   return content
 }
-
-
 
